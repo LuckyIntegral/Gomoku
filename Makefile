@@ -4,7 +4,7 @@
 
 CPP			= c++
 RM			= rm -rf
-CPPFLAGS	= -MD -MP -g
+CPPFLAGS	= -MD -MP -g -std=c++20
 MAKEFLAGS	= -j$(nproc) --no-print-directory
 
 NAME		= Gomoku

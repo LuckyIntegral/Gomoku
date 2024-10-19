@@ -23,6 +23,7 @@ class AI
         const u_short                   count_array_on_board(const vector<u_char>& array, const u_char player) const;
         void                            create_deep_copy_board();
         const vector<vector<u_char>>    get_converted_board(const u_char player) const;
+        const long                      get_score(const u_char player) const;
 
 };
 
@@ -179,3 +180,40 @@ const u_short AI::count_array_on_board(const vector<u_char>& array, const u_char
     return count;
 }
 
+// Function to calculate score for minimax algorithm
+const long AI::get_score(const u_char player) const
+{
+    long score = 0;
+
+    for (auto &array : WIN)
+    {
+        score += this->count_array_on_board(array, player) * 1000000000;
+    }
+
+    for (auto &array : FOUR_UNCOVERED)
+    {
+        score += this->count_array_on_board(array, player) * 1000000;
+    }
+
+    for (auto &array : THREE_UNCOVERED)
+    {
+        score += this->count_array_on_board(array, player) * 1000;
+    }
+
+    for (auto &array : TWO_UNCOVERED)
+    {
+        score += this->count_array_on_board(array, player) * 100;
+    }
+
+    for (auto &array : FOUR_COVERED)
+    {
+        score += this->count_array_on_board(array, player) * 10000;
+    }
+
+    for (auto &array : THREE_COVERED)
+    {
+        score += this->count_array_on_board(array, player) * 1000;
+    }
+
+    return score;
+}

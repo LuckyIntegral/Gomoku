@@ -11,6 +11,7 @@ using namespace std;
 
 typedef struct s_point {
     int row, col;
+    long score;
 }   t_point;
 
 class Game

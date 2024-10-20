@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 #include "Game.hpp"
 #include "constants.hpp"
 
@@ -24,6 +25,7 @@ class AI
         void                            create_deep_copy_board();
         const vector<vector<u_char>>    get_converted_board(const u_char player) const;
         const long                      get_score(const u_char player) const;
+        const t_point                   minimax(const u_char player, u_short depth, long alpha, long beta, bool is_maximizing);
 
 };
 
@@ -216,4 +218,89 @@ const long AI::get_score(const u_char player) const
     }
 
     return score;
+}
+
+// Function to get the best move using minimax algorithm
+const t_point AI::minimax(const u_char player, u_short depth, long alpha, long beta, bool is_maximizing)
+{
+    vector<t_point> possible_moves;
+    t_point best_move;
+    long best_score;
+
+    if (depth == 0)
+    {
+        best_score = this->get_score(player);
+        return best_move;
+    }
+
+    unordered_set<pair<u_short, u_short>> active_cells;
+
+    for (u_short i = 0; i < 19; i++)
+    {
+        for (u_short j = 0; j < 19; j++)
+        {
+            if (this->_board[i][j] != EMPTY)
+            {
+                for (int di = -1; di <= 1; di++)
+                {
+                    for (int dj = -1; dj <= 1; dj++)
+                    {
+                        if (di == 0 && dj == 0) continue;
+                        u_short ni = i + di;
+                        u_short nj = j + dj;
+                        if (ni >= 0 && ni < 19 && nj >= 0 && nj < 19 && this->_board[ni][nj] == EMPTY)
+                        {
+                            if (this->_game->is_valid_move({ni, nj, 0}, player))
+                                active_cells.insert({ni, nj});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (is_maximizing)
+    {
+        best_score = -1000000000;
+        for (const auto& cell : active_cells)
+        {
+            u_short i = cell.first;
+            u_short j = cell.second;
+            this->_board[i][j] = player;
+            long score = this->minimax(player, depth - 1, alpha, beta, false).score;
+            this->_board[i][j] = EMPTY;
+            if (score > best_score)
+            {
+                best_score = score;
+                best_move.row = i;
+                best_move.col = j;
+            }
+            alpha = max(alpha, best_score);
+            if (beta <= alpha)
+                break;
+        }
+    }
+    else
+    {
+        best_score = 1000000000;
+        for (const auto& cell : active_cells)
+        {
+            u_short i = cell.first;
+            u_short j = cell.second;
+            this->_board[i][j] = player;
+            long score = this->minimax(player, depth - 1, alpha, beta, true).score;
+            this->_board[i][j] = EMPTY;
+            if (score < best_score)
+            {
+                best_score = score;
+                best_move.row = i;
+                best_move.col = j;
+            }
+            beta = min(beta, best_score);
+            if (beta <= alpha)
+                break;
+        }
+    }
+    best_move.score = best_score;
+    return best_move;
 }

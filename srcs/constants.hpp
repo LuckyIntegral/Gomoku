@@ -4,42 +4,17 @@
 
 using namespace std;
 
-vector<vector<u_char>>  WIN = {{'1', '1', '1', '1', '1'}};
+extern const long WIN_WEIGHT;
+extern const long FOUR_UNCOVERED_WEIGHT;
+extern const long THREE_UNCOVERED_WEIGHT;
+extern const long TWO_UNCOVERED_WEIGHT;
+extern const long FOUR_COVERED_WEIGHT;
+extern const long THREE_COVERED_WEIGHT;
+extern const long CAPTURE_WEIGHT;
 
-vector<vector<u_char>>  FOUR_UNCOVERED = {
-    {'-', '1', '1', '1', '1', '-'},
-};
-
-vector<vector<u_char>> THREE_UNCOVERED = {
-    {'-', '1', '1', '1', '-'},
-    {'-', '1', '1', '-', '1', '-'},
-    {'-', '1', '-', '1', '1', '-'},
-};
-
-vector<vector<u_char>> TWO_UNCOVERED = {
-    {'-', '1', '1', '-', '-'},
-    {'-', '-', '1', '1', '-'},
-    {'-', '1', '-', '1', '-'},
-    {'-', '1', '-', '-', '1', '-'},
-};
-
-vector<vector<u_char>> FOUR_COVERED = {
-    {'2', '1', '1', '1', '1', '-', '2'},
-    {'2', '1', '1', '1', '-', '1', '2'},
-    {'2', '1', '1', '-', '1', '1', '2'},
-    {'2', '1', '-', '1', '1', '1', '2'},
-    {'2', '-', '1', '1', '1', '1', '2'},
-};
-
-vector<vector<u_char>> THREE_COVERED = {
-    {'2', '1', '1', '1', '-', '-'},
-    {'2', '1', '1', '-', '1', '-'},
-    {'2', '1', '-', '1', '1', '-'},
-    {'-', '1', '1', '-', '1', '2'},
-    {'-', '1', '-', '1', '1', '2'},
-    {'-', '-', '1', '1', '1', '2'},
-    {'2', '1', '-', '1', '-', '1', '2'},
-    {'2', '-', '1', '1', '1', '-', '2'},
-    {'2', '1', '1', '-', '-', '1', '2'},
-    {'2', '1', '-', '-', '1', '1', '2'}
-};
+extern vector<vector<u_char>> WIN;
+extern vector<vector<u_char>> FOUR_UNCOVERED;
+extern vector<vector<u_char>> THREE_UNCOVERED;
+extern vector<vector<u_char>> TWO_UNCOVERED;
+extern vector<vector<u_char>> FOUR_COVERED;
+extern vector<vector<u_char>> THREE_COVERED;

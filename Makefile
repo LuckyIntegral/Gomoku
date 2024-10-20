@@ -9,7 +9,7 @@ MAKEFLAGS	= -j$(nproc) --no-print-directory
 
 NAME		= Gomoku
 SRCSDIR		= srcs
-SRCS		= ${SRCSDIR}/main.cpp
+SRCS		= $(SRCSDIR)/constants.cpp ${SRCSDIR}/main.cpp ${SRCSDIR}/Game.cpp ${SRCSDIR}/AI.cpp
 
 OBJSDIR		= ${SRCSDIR}/objs
 DEPS		= $(SRCS:${SRCSDIR}/%.cpp=${OBJSDIR}/%.d)

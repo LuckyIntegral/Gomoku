@@ -18,6 +18,7 @@ class AI
         Game                    *_game;
         vector<vector<u_char>>  _board;
     public:
+        AI();
         AI(Game *game);
         ~AI();
         const t_point                   get_best_move(const u_char player) const;
@@ -28,6 +29,10 @@ class AI
         const t_point                   minimax(const u_char player, u_short depth, long alpha, long beta, bool is_maximizing);
 
 };
+
+AI::AI()
+{
+}
 
 AI::AI(Game *game)
 {
@@ -219,6 +224,7 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
 {
     vector<t_point> possible_moves;
     t_point best_move;
+    u_char opponent = player == PLAYER ? OPPONENT : PLAYER;
     long best_score;
 
     if (depth == 0)
@@ -253,6 +259,8 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
         }
     }
 
+    this->_game = this->_game->deep_copy();
+
     if (is_maximizing)
     {
         best_score = -1000000000;
@@ -261,9 +269,9 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
             u_short i = cell.first;
             u_short j = cell.second;
             // TODO replace with make_move
-            this->_board[i][j] = player;
-            long score = this->minimax(player, depth - 1, alpha, beta, false).score;
-            this->_board[i][j] = EMPTY;
+            this->_game->make_move({i, j, 0}, player);
+            u_char opponent = player == PLAYER ? OPPONENT : PLAYER;
+            long score = this->minimax(opponent, depth - 1, alpha, beta, false).score;
             if (score > best_score)
             {
                 best_score = score;
@@ -283,9 +291,9 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
             u_short i = cell.first;
             u_short j = cell.second;
             // TODO replace with make_move
-            this->_board[i][j] = player;
-            long score = this->minimax(player, depth - 1, alpha, beta, true).score;
-            this->_board[i][j] = EMPTY;
+            this->_game->make_move({i, j, 0}, player);
+            opponent = player == PLAYER ? OPPONENT : PLAYER;
+            long score = this->minimax(opponent, depth - 1, alpha, beta, true).score;
             if (score < best_score)
             {
                 best_score = score;
@@ -297,6 +305,8 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
                 break;
         }
     }
+    delete this->_game;
+    this->_game = nullptr;
     best_move.score = best_score;
     return best_move;
 }

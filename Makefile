@@ -2,7 +2,7 @@
 ######                            PROPERTIES                             ######
 ###############################################################################
 
-CPP			= c++
+CPP			= clang++
 RM			= rm -rf
 CPPFLAGS	= -MD -MP -g -std=c++20
 MAKEFLAGS	= -j$(nproc) --no-print-directory

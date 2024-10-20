@@ -12,9 +12,8 @@ vector<vector<u_char>>  FOUR_UNCOVERED = {
 
 vector<vector<u_char>> THREE_UNCOVERED = {
     {'-', '1', '1', '1', '-'},
-    {'-', '1', '1', '-', '1'},
-    {'-', '1', '-', '1', '1'},
-    {'1', '1', '1', '-', '-'},
+    {'-', '1', '1', '-', '1', '-'},
+    {'-', '1', '-', '1', '1', '-'},
 };
 
 vector<vector<u_char>> TWO_UNCOVERED = {

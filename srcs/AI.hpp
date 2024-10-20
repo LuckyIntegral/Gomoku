@@ -42,13 +42,7 @@ AI::~AI()
 // Function to create a deep copy of the board
 void AI::create_deep_copy_board()
 {
-    for (u_short i = 0; i < 19; i++)
-    {
-        for (u_short j = 0; j < 19; j++)
-        {
-            this->_board[i][j] = this->_game->get_board()[i][j];
-        }
-    }
+    std::copy(this->_game->get_board().begin(), this->_game->get_board().end(), back_inserter(this->_board));
 }
 
 // Function to convert the board to the format that is easier to work with
@@ -241,13 +235,13 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
         {
             if (this->_board[i][j] != EMPTY)
             {
-                for (int di = -1; di <= 1; di++)
+                for (short di = -1; di <= 1; di++)
                 {
-                    for (int dj = -1; dj <= 1; dj++)
+                    for (short dj = -1; dj <= 1; dj++)
                     {
                         if (di == 0 && dj == 0) continue;
-                        u_short ni = i + di;
-                        u_short nj = j + dj;
+                        short ni = (short)i + di;
+                        short nj = (short)j + dj;
                         if (ni >= 0 && ni < 19 && nj >= 0 && nj < 19 && this->_board[ni][nj] == EMPTY)
                         {
                             if (this->_game->is_valid_move({ni, nj, 0}, player))
@@ -266,6 +260,7 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
         {
             u_short i = cell.first;
             u_short j = cell.second;
+            // TODO replace with make_move
             this->_board[i][j] = player;
             long score = this->minimax(player, depth - 1, alpha, beta, false).score;
             this->_board[i][j] = EMPTY;
@@ -287,6 +282,7 @@ const t_point AI::minimax(const u_char player, u_short depth, long alpha, long b
         {
             u_short i = cell.first;
             u_short j = cell.second;
+            // TODO replace with make_move
             this->_board[i][j] = player;
             long score = this->minimax(player, depth - 1, alpha, beta, true).score;
             this->_board[i][j] = EMPTY;

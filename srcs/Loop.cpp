@@ -7,6 +7,7 @@ void renderText(const char* text, float x, float y) {
     }
 }
 
+
 void Game::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     static int player = 0;
 
@@ -14,23 +15,16 @@ void Game::mouseButtonCallback(GLFWwindow* window, int button, int action, int m
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
 
-        std::cout << "xpos: " << xpos << " ypos: " << ypos << std::endl;
+        const double MARGIN = 0.2f;
+        const double BOARD_LENGTH = 640;
+        double x = xpos - 80, y = ypos - 80;
 
-        int width, height;
-        glfwGetWindowSize(window, &width, &height);
-
-        float x = (xpos / width) * 2 - 1;
-        float y = 1 - (ypos / height) * 2;
-
-        std::cout << "x: " << x << " y: " << y << std::endl;
-
-        const float MARGIN = 0.19f;
-        int row = (x + 1 - MARGIN) / (2 - 2 * MARGIN) * BOARD_SIZE;
-        int col = (y + 1 - MARGIN) / (2 - 2 * MARGIN) * BOARD_SIZE;
-
-        if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
+        if (x < 0 || y < 0 || x > BOARD_LENGTH || y > BOARD_LENGTH) {
             return;
         }
+
+        int row = static_cast<int>(std::round((x / BOARD_LENGTH) * (BOARD_SIZE - 1)));
+        int col = 18 - static_cast<int>(std::round((y / BOARD_LENGTH) * (BOARD_SIZE - 1)));
 
         if (this->_board[row][col] == EMPTY) {
             if (player % 2) {

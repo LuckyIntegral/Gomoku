@@ -46,6 +46,7 @@ void Game::loop(void) {
     glfwSetMouseButtonCallback(this->_window, mouseButtonCallback);
 
     while (!glfwWindowShouldClose(this->_window)) {
+        handle_resize();
         this->display();
         glfwPollEvents();
     }

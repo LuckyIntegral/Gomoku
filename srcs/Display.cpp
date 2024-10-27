@@ -1,5 +1,7 @@
 #include "Game.hpp"
 
+bool chosen = false;
+
 static void drawCircle(
     float cx,
     float cy,
@@ -83,37 +85,64 @@ void    Game::display(void) const {
     glfwSwapBuffers(glfwGetCurrentContext());
 }
 
-// void renderText(const char* text, float x, float y) {
-//     glRasterPos2f(x, y);
-//     for (const char* c = text; *c != '\0'; c++) {
-//         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
-//     }
-// }
+void renderTexts(const char* text, float x, float y) {
+    glRasterPos2f(x, y);
+    for (const char* c = text; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    }
+}
 
-// void show_player_mode_menu() {
-//     glClear(GL_COLOR_BUFFER_BIT);
+void show_player_mode_menu() {
+    glClear(GL_COLOR_BUFFER_BIT);
 
-//     glColor3f(1.0f, 1.0f, 1.0f); // White color
-//     drawRectangle(-0.6f, 0.45f, 0.6f, 0.35f); // Top frame
-//     drawRectangle(-0.6f, 0.35f, 0.6f, 0.25f); // Title frame
-//     drawRectangle(-0.6f, 0.25f, 0.6f, 0.15f); // Option 1 frame
-//     drawRectangle(-0.6f, 0.15f, 0.6f, 0.05f); // Option 2 frame
+    glColor3f(213.0f / 255.0f, 169.0f / 255.0f, 94.0f / 255.0f);
+    drawRectangle(-1, -1, 1, 1);
 
-//     // Draw text
-//     glColor3f(0.0f, 0.0f, 0.0f); // Black color for text
-//     renderText("Game Mode:", -0.15f, 0.38f);
-//     glColor3f(1.0f, 0.0f, 0.0f); // Red color for option 1
-//     renderText("1. Player vs AI", -0.15f, 0.18f);
-//     glColor3f(0.0f, 0.0f, 1.0f); // Blue color for option 2
-//     renderText("2. Player vs Player", -0.15f, 0.08f);
+    display_splited_grid(BOARD_SIZE);
+    display_splited_grid(4, 3.0f);
 
-//     glfwSwapBuffers(glfwGetCurrentContext());
-// }
+    glColor3f(BLACK);
+    drawRectangle(-0.6f, 0.45f, 0.6f, -0.05f);
 
-// t_players_mode prompt_players_mode(GLFWwindow* window) {
-//     while (!glfwWindowShouldClose(window)) {
-//         show_player_mode_menu();
-//         glfwPollEvents();
-//     }
-//     return PLAYER_VS_AI;
-// }
+    glColor3f(203.0f / 255.0f, 160.0f / 255.0f, 90.0f / 255.0f);
+    drawRectangle(-0.59f, 0.44f, 0.59f, -0.04f);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    renderTexts("Game Mode:", -0.14f, 0.35f);
+    renderTexts("Player vs AI", -0.13f, 0.2f);
+    renderTexts("Player vs Player", -0.17f, 0.1f);
+    renderTexts("Player vs Player (with hints)", -0.26f, 0.0f);
+
+    glfwSwapBuffers(glfwGetCurrentContext());
+}
+
+void Game::prompt_game_setup(void) {
+    int mode = 0;
+
+    glfwSetWindowUserPointer(this->_window, this);
+    auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int mods) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+            cout << xpos << " " << ypos << endl;
+            if (xpos > 300 && xpos < 413 && ypos > 290 && ypos < 525) {
+                if (xpos > 300 && xpos < 333) {
+                    game->_game_setup.player_mode = PLAYER_VS_AI;
+                } else if (xpos > 333 && xpos < 375) {
+                    game->_game_setup.player_mode = PLAYER_VS_PLAYER_NO_HINTS;
+                } else {
+                    game->_game_setup.player_mode = PLAYER_VS_PLAYER_HINTS;
+                }
+                chosen = true;
+            }
+        }
+    };
+
+    glfwSetMouseButtonCallback(this->_window, mouseButtonCallback);
+    while (!chosen && !glfwWindowShouldClose(this->_window)) {
+        this->handle_resize();
+        show_player_mode_menu();
+        glfwPollEvents();
+    }
+}

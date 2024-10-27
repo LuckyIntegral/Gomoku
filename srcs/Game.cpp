@@ -1,5 +1,6 @@
 
 #include "Game.hpp"
+#include <cstdlib>
 
 Game::~Game() {}
 
@@ -16,6 +17,7 @@ Game::Game()
     }
 
     glfwMakeContextCurrent(this->_window);
+    _game_setup = {PLAYER_VS_PLAYER_NO_HINTS, STANDARD};
 }
 
 const vector<vector<u_char>>& Game::get_board() const
@@ -31,4 +33,14 @@ void Game::set_game_over()
 const bool Game::get_game_over() const
 {
     return this->_is_game_over;
+}
+
+void Game::handle_resize() const
+{
+    int width, height;
+    glfwGetFramebufferSize(this->_window, &width, &height);
+    if (width != WINDOW_HEIGHT || height != WINDOW_HEIGHT) {
+        cerr << "Window resizing is not supported" << endl;
+        std::exit(1);
+    }
 }

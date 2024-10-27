@@ -51,11 +51,13 @@ class Game
         vector<vector<u_char>>  _board;
         bool                    _is_game_over;
         GLFWwindow              *_window;
+        t_game_setup            _game_setup;
     public:
         Game();
         ~Game();
         void                            init();
         void                            loop();
+        void                            prompt_game_setup();
         void                            display() const;
         void                            mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
@@ -66,4 +68,5 @@ class Game
         const vector<vector<u_char>>&   get_board() const;
         void                            set_game_over();
         const bool                      get_game_over() const;
+        void                            handle_resize() const;
 };

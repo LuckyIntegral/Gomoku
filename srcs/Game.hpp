@@ -35,6 +35,7 @@ typedef enum e_player_mode {
 typedef enum e_gamemode {
     STANDARD,
     PRO,
+    LONG_PRO,
     SWAP,
     SWAP2,
     SWAP2_PENTE,
@@ -43,6 +44,7 @@ typedef enum e_gamemode {
 typedef struct s_game_setup {
     t_players_mode player_mode;
     t_gamemode game_mode;
+    bool is_player_1_first;
 }   t_game_setup;
 
 class Game

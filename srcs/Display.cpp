@@ -1,4 +1,5 @@
 #include "Game.hpp"
+#include <iostream>
 
 bool chosen = false;
 
@@ -116,33 +117,95 @@ void show_player_mode_menu() {
     glfwSwapBuffers(glfwGetCurrentContext());
 }
 
+void show_starting_rule_menu() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glColor3f(213.0f / 255.0f, 169.0f / 255.0f, 94.0f / 255.0f);
+    drawRectangle(-1, -1, 1, 1);
+
+    display_splited_grid(BOARD_SIZE);
+    display_splited_grid(4, 3.0f);
+
+    glColor3f(BLACK);
+    drawRectangle(-0.6f, 0.45f, 0.6f, -0.34f);
+
+    glColor3f(203.0f / 255.0f, 160.0f / 255.0f, 90.0f / 255.0f);
+    drawRectangle(-0.59f, 0.44f, 0.59f, -0.33f);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    renderTexts("Starting Rule:", -0.14f, 0.35f);
+    renderTexts("Standard", -0.08f, 0.2f);
+    renderTexts("Pro", -0.03f, 0.1f);
+    renderTexts("Long Pro", -0.1f, 0.0f);
+    renderTexts("Swap", -0.06f, -0.1f);
+    renderTexts("Swap 2", -0.08f, -0.2f);
+    renderTexts("Swap 2 Pente", -0.14f, -0.3f);
+
+    glfwSwapBuffers(glfwGetCurrentContext());
+}
+
 void Game::prompt_game_setup(void) {
-    int mode = 0;
-
-    glfwSetWindowUserPointer(this->_window, this);
-    auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int mods) {
-        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-            double xpos, ypos;
-            glfwGetCursorPos(window, &xpos, &ypos);
-            Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
-            cout << xpos << " " << ypos << endl;
-            if (xpos > 300 && xpos < 413 && ypos > 290 && ypos < 525) {
-                if (xpos > 300 && xpos < 333) {
-                    game->_game_setup.player_mode = PLAYER_VS_AI;
-                } else if (xpos > 333 && xpos < 375) {
-                    game->_game_setup.player_mode = PLAYER_VS_PLAYER_NO_HINTS;
-                } else {
-                    game->_game_setup.player_mode = PLAYER_VS_PLAYER_HINTS;
+    {
+        glfwSetWindowUserPointer(this->_window, this);
+        auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int mods) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                double xpos, ypos;
+                glfwGetCursorPos(window, &ypos, &xpos);
+                Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+                cout << xpos << " " << ypos << endl;
+                if (xpos > 300 && xpos < 413 && ypos > 290 && ypos < 525) {
+                    if (xpos > 300 && xpos < 333) {
+                        game->_game_setup.player_mode = PLAYER_VS_AI;
+                    } else if (xpos > 333 && xpos < 375) {
+                        game->_game_setup.player_mode = PLAYER_VS_PLAYER_NO_HINTS;
+                    } else {
+                        game->_game_setup.player_mode = PLAYER_VS_PLAYER_HINTS;
+                    }
+                    chosen = true;
                 }
-                chosen = true;
             }
-        }
-    };
+        };
 
-    glfwSetMouseButtonCallback(this->_window, mouseButtonCallback);
-    while (!chosen && !glfwWindowShouldClose(this->_window)) {
-        this->handle_resize();
-        show_player_mode_menu();
-        glfwPollEvents();
+        glfwSetMouseButtonCallback(this->_window, mouseButtonCallback);
+        while (!chosen && !glfwWindowShouldClose(this->_window)) {
+            this->handle_resize();
+            show_player_mode_menu();
+            glfwPollEvents();
+        }
+    }
+    {
+        chosen = false;
+        glfwSetWindowUserPointer(this->_window, this);
+        auto mouseButtonCallback = [](GLFWwindow* window, int button, int action, int mods) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+                double xpos, ypos;
+                glfwGetCursorPos(window, &ypos, &xpos);
+                Game* game = static_cast<Game*>(glfwGetWindowUserPointer(window));
+                cout << xpos << " " << ypos << endl;
+                if (xpos > 300 && xpos < 531 && ypos > 290 && ypos < 525) {
+                    if (xpos > 300 && xpos < 333) {
+                        game->_game_setup.game_mode = STANDARD;
+                    } else if (xpos > 333 && xpos < 375) {
+                        game->_game_setup.game_mode = PRO;
+                    } else if (xpos > 375 && xpos < 417) {
+                        game->_game_setup.game_mode = LONG_PRO;
+                    } else if (xpos > 417 && xpos < 459) {
+                        game->_game_setup.game_mode = SWAP;
+                    } else if (xpos > 459 && xpos < 501) {
+                        game->_game_setup.game_mode = SWAP2;
+                    } else {
+                        game->_game_setup.game_mode = SWAP2_PENTE;
+                    }
+                    chosen = true;
+                }
+            }
+        };
+
+        glfwSetMouseButtonCallback(this->_window, mouseButtonCallback);
+        while (!chosen && !glfwWindowShouldClose(this->_window)) {
+            this->handle_resize();
+            show_starting_rule_menu();
+            glfwPollEvents();
+        }
     }
 }

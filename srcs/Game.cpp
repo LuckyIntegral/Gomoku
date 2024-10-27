@@ -17,7 +17,7 @@ Game::Game()
     }
 
     glfwMakeContextCurrent(this->_window);
-    _game_setup = {PLAYER_VS_PLAYER_NO_HINTS, STANDARD};
+    _game_setup = {PLAYER_VS_PLAYER_NO_HINTS, STANDARD, true};
 }
 
 const vector<vector<u_char>>& Game::get_board() const

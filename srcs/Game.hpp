@@ -54,9 +54,14 @@ class Game
     private:
         vector<vector<u_char>>  _board;
         bool                    _is_game_over;
-<<<<<<< HEAD
         GLFWwindow              *_window;
         t_game_setup            _game_setup;
+        u_short                 _player_1_capture;
+        u_short                 _player_2_capture;
+        const bool              _is_capture(const t_point point, const u_char player) const;
+        u_short                 _count_three_uncovered(const u_char player) const;
+        u_short                 _remove_captured_stones(const t_point point, const u_char player);
+
     public:
         Game();
         ~Game();
@@ -68,28 +73,13 @@ class Game
 
         int                             get_game_setup();
         const bool                      is_valid_move(t_point point, u_char player) const;
-        void                            make_move(t_point point, u_char player);
+        u_short                         make_move(t_point point, u_char player);
+        Game*                           deep_copy() const;
 
         const vector<vector<u_char>>&   get_board() const;
         void                            set_game_over();
         const bool                      get_game_over() const;
         void                            handle_resize() const;
 };
-=======
-        u_short                 _player_1_capture;
-        u_short                 _player_2_capture;
-        const bool              _is_capture(const t_point point, const u_char player) const;
-        u_short                 _count_three_uncovered(const u_char player) const;
-        u_short                 _remove_captured_stones(const t_point point, const u_char player);
-    public:
-        Game();
-        ~Game();
-        const bool                      is_valid_move(const t_point point, const u_char player);
-        u_short                         make_move(const t_point point, const u_char player);
-        const vector<vector<u_char>>&   get_board() const;
-        void                            set_game_over();
-        const bool                      get_game_over() const;
-        Game*                           deep_copy() const;
-};
 
->>>>>>> origin/main
+

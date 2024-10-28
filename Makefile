@@ -2,9 +2,9 @@
 ######                            PROPERTIES                             ######
 ###############################################################################
 
-CPP			= gcc
+CPP			= clang++
 RM			= rm -rf
-CPPFLAGS	= -MD -MP -g
+CPPFLAGS	= -MD -MP -g -std=c++20
 MAKEFLAGS	= -j$(nproc) --no-print-directory
 LDFLAGS		= -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lglfw -lstdc++ -lglut -lm
 
@@ -14,7 +14,9 @@ SRCS		= \
 			$(SRCSDIR)/Display.cpp \
 			$(SRCSDIR)/Loop.cpp \
 			$(SRCSDIR)/Game.cpp \
-			$(SRCSDIR)/main.cpp
+			$(SRCSDIR)/main.cpp \
+			$(SRCSDIR)/constants.cpp \
+			${SRCSDIR}/AI.cpp
 
 OBJSDIR		= $(SRCSDIR)/objs
 DEPS		= $(SRCS:$(SRCSDIR)/%.cpp=$(OBJSDIR)/%.d)

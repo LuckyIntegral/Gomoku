@@ -43,7 +43,6 @@ const bool Game::get_game_over() const
     return this->_is_game_over;
 }
 
-<<<<<<< HEAD
 void Game::handle_resize() const
 {
     int width, height;
@@ -52,7 +51,7 @@ void Game::handle_resize() const
         cerr << "Window resizing is not supported" << endl;
         std::exit(1);
     }
-=======
+}
 // Function to check if the move is valid
 const bool Game::is_valid_move(const t_point point, const u_char player)
 {
@@ -354,5 +353,4 @@ u_short Game::_remove_captured_stones(const t_point point, const u_char player)
     }
 
     return count;
->>>>>>> origin/main
 }

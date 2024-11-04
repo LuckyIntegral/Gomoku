@@ -72,7 +72,7 @@ class Game
         void                            mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
         int                             get_game_setup();
-        const bool                      is_valid_move(t_point point, u_char player) const;
+        const bool                      is_valid_move(t_point point, u_char player);
         u_short                         make_move(t_point point, u_char player);
         Game*                           deep_copy() const;
 
@@ -81,5 +81,3 @@ class Game
         const bool                      get_game_over() const;
         void                            handle_resize() const;
 };
-
-

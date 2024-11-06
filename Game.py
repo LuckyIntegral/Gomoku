@@ -1,4 +1,4 @@
-from Constans import (
+from Constants import (
     EMPTY,
     PLAYER1,
     PLAYER2,
@@ -6,7 +6,7 @@ from Constans import (
 )
 
 class Game:
-    def __init__(self):
+    def __init__(self) -> None:
         self._board = [[EMPTY for _ in range(19)] for _ in range(19)]
         self._player_1_capture = 0
         self._player_2_capture = 0
@@ -170,6 +170,30 @@ class Game:
             self._board[row+2][col+2] = EMPTY
         return count
     
+    def count_captures(self, player: int, row: int, col: int) -> int:
+        """
+        Count captures
+        Takes in the player (PLAYER1 OR PLAYER2), row and column
+        """
+        count = 0
+        if self._is_left_horizontal_capture(player, row, col):
+            count += 1
+        if self._is_right_horizontal_capture(player, row, col):
+            count += 1
+        if self._is_up_vertical_capture(player, row, col):
+            count += 1
+        if self._is_down_vertical_capture(player, row, col):
+            count += 1
+        if self._is_left_up_diagonal_capture(player, row, col):
+            count += 1
+        if self._is_right_up_diagonal_capture(player, row, col):
+            count += 1
+        if self._is_left_down_diagonal_capture(player, row, col):
+            count += 1
+        if self._is_right_down_diagonal_capture(player, row, col):
+            count += 1
+        return count
+    
     def _check_pattern_horizontal(self, pattern: list, player: int, row: int, col: int) -> bool:
         """
         Check if the pattern is in the right horizontal direction
@@ -207,18 +231,28 @@ class Game:
         return True
         
     
-    def _count_pattern_on_board(self, pattern: list, player: int) -> int:
+    def count_pattern_on_board(self, pattern: list, player: int) -> int:
         """
         Counts patterns on the board
         Takes in the pattern and the player (PLAYER1 OR PLAYER2)
         """
-        player = 3 - player
+        new_pattern = []
+        if player == PLAYER2:
+            for cell in pattern:
+                if cell == PLAYER1:
+                    new_pattern.append(PLAYER2)
+                elif cell == PLAYER2:
+                    new_pattern.append(PLAYER1)
+                else:
+                    new_pattern.append(EMPTY)
+        else:
+            new_pattern = list(pattern)
         count = 0
         for row in range(19):
             for col in range(19):
-                count += self._check_pattern_horizontal(pattern, player, row, col)
-                count += self._check_pattern_vertical(pattern, player, row, col)
-                count += self._check_pattern_diagonal(pattern, player, row, col)
+                count += self._check_pattern_horizontal(new_pattern, player, row, col)
+                count += self._check_pattern_vertical(new_pattern, player, row, col)
+                count += self._check_pattern_diagonal(new_pattern, player, row, col)
         return count
         
     
@@ -236,12 +270,12 @@ class Game:
         # Count the number of patterns on the board
         prev_count = 0
         for array in THREE_UNCOVERED:
-            prev_count += self._count_pattern_on_board(array, player)
+            prev_count += self.count_pattern_on_board(array, player)
         # Placing the player on the board and count the number of patterns again
         self._board[row][col] = player
         new_count = 0
         for array in THREE_UNCOVERED:
-            new_count += self._count_pattern_on_board(array, player)
+            new_count += self.count_pattern_on_board(array, player)
         self._board[row][col] = EMPTY
         return new_count - prev_count < 2
     
@@ -258,3 +292,25 @@ class Game:
         else:
             self._player_2_capture += captures
         return captures
+    
+    def get_best_possible_moves(self, player: int) -> list:
+        """
+        Get the best possible moves
+        returns a list of tuples (row, col)
+        """
+        moves = set()
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+
+        for row in range(19):
+            for col in range(19):
+                if self._board[row][col] != EMPTY:
+                    for dr, dc in directions:
+                        nr, nc = row + dr, col + dc
+                        if tuple((nr, nc)) in moves:
+                            continue
+                        if 0 <= nr < 19 and 0 <= nc < 19 and self.is_valid_move(player, nr, nc):
+                            moves.add((nr, nc))
+        # If there are no moves, return the center of the board
+        if not moves:
+            moves.add((9, 9))
+        return list(moves)

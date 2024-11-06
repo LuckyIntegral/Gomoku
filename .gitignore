@@ -34,3 +34,4 @@
 objs/
 Gomoku
 .vscode/
+__pycache__/

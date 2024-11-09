@@ -4,61 +4,141 @@ import pygame
 from . import display
 
 
-def draw_button(screen, text, position, font, color=(0, 0, 0), bg_color=(200, 200, 200)):
-    text_surface = font.render(text, True, color)
-    text_rect = text_surface.get_rect(center=position)
+PLAYER_MODE_OPTIONS = ["Player vs AI", "Player vs Player", "Player vs Player with Hints"]
+PLAYER_COLOR_OPTIONS = ["White", "Black"]
+RULES_OPTIONS = ["Standart", "Swap", "Swap2", "Pro", "Long Pro"]
+
+MENU_X_POS = 850
+
+def create_selector_button(
+    screen: pygame.Surface,
+    text: str,
+    position: tuple[int, int],
+    font: pygame.font.Font,
+    enabled: bool = True
+) -> pygame.Rect:
+    ''' Draws a button on the screen with the given text. '''
+    if enabled:
+        text_surface = font.render(text, True, (255, 255, 255))
+        width = 3
+    else:
+        text_surface = font.render(text, True, (100, 100, 100))
+        width = 0
+    text_rect = text_surface.get_rect(topleft=position)
     button_rect = text_rect.inflate(20, 10)
-    pygame.draw.rect(screen, bg_color, button_rect)
+    pygame.draw.rect(
+        screen,
+        (200, 200, 200),
+        button_rect,
+        width,
+        border_radius=15,
+    )
+    screen.blit(text_surface, text_rect)
+    return button_rect
+
+
+def make_static_menu_entry(
+    text: str,
+    position: tuple[int, int],
+    header: bool = False
+) -> tuple[pygame.Surface, pygame.Rect]:
+    ''' Creates a text placeholder for the menu. This text is not interactive. '''
+    font_size = 36 if header else 32
+
+    player_mode_text = pygame.font.Font("freesansbold.ttf", font_size)\
+        .render(text, True, (255, 255, 255))
+    player_mode_rect = player_mode_text.get_rect(topleft=position)
+
+    return player_mode_text, player_mode_rect
+
+
+def add_buttons(
+    screen: pygame.Surface,
+    options: list[str],
+    position: tuple[int, int],
+    selected: int
+) -> list[pygame.Rect]:
+    ''' Draws buttons for each option and returns a list of rects for each button. '''
+    BUTTON_FONT = pygame.font.Font("freesansbold.ttf", 24)
+    BUTTON_FONT.italic = True
+    reacts = []
+
+    for i, option in enumerate(options):
+        reacts.append(create_selector_button(
+            screen,
+            option,
+            position,
+            BUTTON_FONT,
+            i == selected
+        ))
+        position = (position[0], position[1] + 50)
+
+    return reacts
+
+
+def listen_clicks(
+    reacts: list[pygame.Rect],
+    x: int,
+    y: int,
+    old_mode: int
+    ) -> int:
+    ''' Listens for clicks on the buttons and returns the new mode if clicked. '''
+
+    for i, button_rect in enumerate(reacts):
+        if button_rect.collidepoint(x, y):
+            return i
+
+    return old_mode
+
+
+def create_start_button(screen: pygame.Surface) -> pygame.Rect:
+    ''' Creates a start button. '''
+    font = pygame.font.Font("freesansbold.ttf", 32)
+    text_surface = font.render("Start game", True, (30, 215, 30))
+    text_rect = text_surface.get_rect(topright=(MENU_X_POS + 400, 750))
+    button_rect = text_rect.inflate(20, 10)
+    pygame.draw.rect(screen, (10, 160, 10), button_rect, 3)
     screen.blit(text_surface, text_rect)
     return button_rect
 
 
 def prompt_game_setup(screen: pygame.Surface) -> dict:
     ''' Prompts the player to choose starting stats and position. '''
-    mode = {
-        "player_mode": 1,
-        "player_color": 1,
-        "starting_position": 1
+    settings = {
+        "mode": 0,
+        "color": 0,
+        "start_rules": 0,
     }
+    STATIC_MENU_TEXT = [
+        make_static_menu_entry("Settings", (MENU_X_POS + 120, 20), header=True),
+        make_static_menu_entry("Player Mode:", (MENU_X_POS, 90)),
+        make_static_menu_entry("Color to play:", (MENU_X_POS, 290)),
+        make_static_menu_entry("Starting Position:", (MENU_X_POS, 440))
+    ]
     running = True
-    font = pygame.font.Font(None, 36)
-
-    # Menu options
-    player_mode_options = ["Player vs AI", "Player vs Player", "Player vs Player with Hints"]
-    player_color_options = ["White", "Black"]
-    starting_position_options = ["Swap", "Swap2", "Pro", "Long Pro"]
-
-    player_mode_text = font.render("Player Mode:", True, (0, 0, 0))
-    player_color_text = font.render("Player Color:", True, (0, 0, 0))
-    starting_position_text = font.render("Starting Position:", True, (0, 0, 0))
-
-    player_mode_rect = player_mode_text.get_rect(topleft=(50, 100))
-    player_color_rect = player_color_text.get_rect(topleft=(50, 200))
-    starting_position_rect = starting_position_text.get_rect(topleft=(50, 300))
 
     while running:
         display.draw_board(screen)
-        screen.blit(player_mode_text, player_mode_rect)
-        screen.blit(player_color_text, player_color_rect)
-        screen.blit(starting_position_text, starting_position_rect)
+        for text, rect in STATIC_MENU_TEXT:
+            screen.blit(text, rect)
 
-        player_mode_button_rect = draw_button(screen, player_mode_options[mode["player_mode"] - 1], (200, 100), font)
-        player_color_button_rect = draw_button(screen, player_color_options[mode["player_color"] - 1], (200, 200), font)
-        starting_position_button_rect = draw_button(screen, starting_position_options[mode["starting_position"] - 1], (200, 300), font)
+        mode_reacts = add_buttons(screen, PLAYER_MODE_OPTIONS, (MENU_X_POS, 140), settings["mode"])
+        color_reacts = add_buttons(screen, PLAYER_COLOR_OPTIONS, (MENU_X_POS, 340), settings["color"])
+        rules_reacts = add_buttons(screen, RULES_OPTIONS, (MENU_X_POS, 490), settings["start_rules"])
+        start_rect = create_start_button(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
                 x, y = pygame.mouse.get_pos()
-                if player_mode_button_rect.collidepoint(x, y):
-                    mode["player_mode"] = (mode["player_mode"] % 3) + 1
-                elif player_color_button_rect.collidepoint(x, y):
-                    mode["player_color"] = (mode["player_color"] % 2) + 1
-                elif starting_position_button_rect.collidepoint(x, y):
-                    mode["starting_position"] = (mode["starting_position"] % 4) + 1
+                settings["mode"] = listen_clicks(mode_reacts, x, y, settings["mode"])
+                settings["color"] = listen_clicks(color_reacts, x, y, settings["color"])
+                settings["start_rules"] = listen_clicks(rules_reacts, x, y, settings["start_rules"])
+                if start_rect.collidepoint(x, y):
+                    running = False
 
         pygame.display.flip()
         pygame.time.delay(10)
 
-    return mode
+    return settings

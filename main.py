@@ -7,6 +7,7 @@ def main():
     ''' Main function for Gomoku game '''
     screen: pygame.Surface = display.init()
     setup = game_setup.prompt_game_setup(screen)
+    print(setup)
     board = [[0 for _ in range(19)] for _ in range(19)]
     running = True
     turn = 1
@@ -26,7 +27,6 @@ def main():
         pygame.display.flip()
         pygame.time.delay(10)
 
-    pygame.quit()
 
 
 if __name__ == "__main__":

@@ -102,6 +102,33 @@ def create_start_button(screen: pygame.Surface) -> pygame.Rect:
     return button_rect
 
 
+def frames():
+    ''' Generator for the animation of the pieces. '''
+    pieces = [[(j + i) % 2 + 1 for i in range(19)] for j in range(19)]
+    empty = [[0 for _ in range(19)] for _ in range(19)]
+    board = empty
+    freq = 10
+    total_frames = 18
+    frame = 0
+
+    while True:
+        if frame % freq == 0:
+            if frame // freq < 10:
+                spiral = 9 - frame // freq
+            else:
+                spiral = frame // freq - 9
+
+            for i in range(19):
+                for j in range(19):
+                    if (i == spiral or j == spiral or i == 18 - spiral or j == 18 - spiral) and spiral <= i <= 18 - spiral and spiral <= j <= 18 - spiral:
+                        board[i][j] = pieces[i][j]
+                    else:
+                        board[i][j] = 0
+        yield board
+        frame += 1
+        frame %= (total_frames * freq)
+
+
 def prompt_game_setup(screen: pygame.Surface) -> dict:
     ''' Prompts the player to choose starting stats and position. '''
     settings = {
@@ -115,10 +142,12 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
         make_static_menu_entry("Color to play:", (MENU_X_POS, 290)),
         make_static_menu_entry("Starting Position:", (MENU_X_POS, 440))
     ]
-    running = True
 
-    while running:
+
+    for board in frames():
         display.draw_board(screen)
+        display.draw_pieces(screen, board)
+
         for text, rect in STATIC_MENU_TEXT:
             screen.blit(text, rect)
 
@@ -136,7 +165,7 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
                 settings["color"] = listen_clicks(color_reacts, x, y, settings["color"])
                 settings["start_rules"] = listen_clicks(rules_reacts, x, y, settings["start_rules"])
                 if start_rect.collidepoint(x, y):
-                    running = False
+                    return settings
 
         pygame.display.flip()
         pygame.time.delay(10)

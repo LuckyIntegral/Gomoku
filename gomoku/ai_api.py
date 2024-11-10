@@ -21,6 +21,6 @@ def is_draw(board: list[list[int]]) -> bool:
 def is_win(board: list[list[int]], player: int) -> bool:
     ''' check if the player has won '''
     # api call here
-    if random.randint(0, 100) == 42:
-        return True
+    # if random.randint(0, 100) == 42:
+    #     return True
     return False

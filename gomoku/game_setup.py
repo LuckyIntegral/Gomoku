@@ -3,10 +3,35 @@ import sys
 import pygame
 from . import display
 
+OPTION_PLAYER_VS_AI = "Player vs AI"
+OPTION_PLAYER_VS_PLAYER = "Player vs Player"
+OPTION_PLAYER_VS_PLAYER_HINTS = "Player vs Player with Hints"
+OPTION_WHITE = "White"
+OPTION_BLACK = "Black"
+OPTION_RANDOM = "Random"
+OPTION_STANDARD = "Standard"
+OPTION_SWAP = "Swap"
+OPTION_SWAP2 = "Swap2"
+OPTION_PRO = "Pro"
+OPTION_LONG_PRO = "Long Pro"
 
-PLAYER_MODE_OPTIONS = ["Player vs AI", "Player vs Player", "Player vs Player with Hints"]
-PLAYER_COLOR_OPTIONS = ["White", "Black"]
-RULES_OPTIONS = ["Standart", "Swap", "Swap2", "Pro", "Long Pro"]
+PLAYER_MODE_OPTIONS = [
+    OPTION_PLAYER_VS_AI,
+    OPTION_PLAYER_VS_PLAYER,
+    OPTION_PLAYER_VS_PLAYER_HINTS
+]
+PLAYER_COLOR_OPTIONS = [
+    OPTION_WHITE,
+    OPTION_BLACK,
+    OPTION_RANDOM
+]
+RULES_OPTIONS = [
+    OPTION_STANDARD,
+    OPTION_SWAP,
+    OPTION_SWAP2,
+    OPTION_PRO,
+    OPTION_LONG_PRO
+]
 
 MENU_X_POS = 850
 
@@ -81,7 +106,7 @@ def listen_clicks(
     x: int,
     y: int,
     old_mode: int
-    ) -> int:
+) -> int:
     ''' Listens for clicks on the buttons and returns the new mode if clicked. '''
 
     for i, button_rect in enumerate(reacts):
@@ -102,12 +127,11 @@ def create_start_button(screen: pygame.Surface) -> pygame.Rect:
     return button_rect
 
 
-def frames():
+def frames(freq: int = 10):
     ''' Generator for the animation of the pieces. '''
     pieces = [[(j + i) % 2 + 1 for i in range(19)] for j in range(19)]
     empty = [[0 for _ in range(19)] for _ in range(19)]
     board = empty
-    freq = 10
     total_frames = 18
     frame = 0
 
@@ -120,7 +144,8 @@ def frames():
 
             for i in range(19):
                 for j in range(19):
-                    if (i == spiral or j == spiral or i == 18 - spiral or j == 18 - spiral) and spiral <= i <= 18 - spiral and spiral <= j <= 18 - spiral:
+                    if i in (spiral, 18 - spiral) and spiral <= j <= 18 - spiral \
+                        or j in (spiral, 18 - spiral) and spiral <= i <= 18 - spiral:
                         board[i][j] = pieces[i][j]
                     else:
                         board[i][j] = 0
@@ -129,22 +154,30 @@ def frames():
         frame %= (total_frames * freq)
 
 
+def convert_to_text(settings: dict) -> dict:
+    ''' Converts the settings to text. '''
+    settings["mode"] = PLAYER_MODE_OPTIONS[settings["mode"]]
+    settings["color"] = PLAYER_COLOR_OPTIONS[settings["color"]]
+    settings["start_rules"] = RULES_OPTIONS[settings["start_rules"]]
+    return settings
+
+
 def prompt_game_setup(screen: pygame.Surface) -> dict:
     ''' Prompts the player to choose starting stats and position. '''
-    settings = {
+    settings = { # Default settings
         "mode": 0,
-        "color": 0,
-        "start_rules": 0,
+        "color": 2,
+        "start_rules": 0
     }
     STATIC_MENU_TEXT = [
         make_static_menu_entry("Settings", (MENU_X_POS + 120, 20), header=True),
         make_static_menu_entry("Player Mode:", (MENU_X_POS, 90)),
         make_static_menu_entry("Color to play:", (MENU_X_POS, 290)),
-        make_static_menu_entry("Starting Position:", (MENU_X_POS, 440))
+        make_static_menu_entry("Starting Position:", (MENU_X_POS, 490))
     ]
 
 
-    for board in frames():
+    for board in frames(13):
         display.draw_board(screen)
         display.draw_pieces(screen, board)
 
@@ -153,7 +186,7 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
 
         mode_reacts = add_buttons(screen, PLAYER_MODE_OPTIONS, (MENU_X_POS, 140), settings["mode"])
         color_reacts = add_buttons(screen, PLAYER_COLOR_OPTIONS, (MENU_X_POS, 340), settings["color"])
-        rules_reacts = add_buttons(screen, RULES_OPTIONS, (MENU_X_POS, 490), settings["start_rules"])
+        rules_reacts = add_buttons(screen, RULES_OPTIONS, (MENU_X_POS, 540), settings["start_rules"])
         start_rect = create_start_button(screen)
 
         for event in pygame.event.get():
@@ -165,9 +198,9 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
                 settings["color"] = listen_clicks(color_reacts, x, y, settings["color"])
                 settings["start_rules"] = listen_clicks(rules_reacts, x, y, settings["start_rules"])
                 if start_rect.collidepoint(x, y):
-                    return settings
+                    return convert_to_text(settings)
 
         pygame.display.flip()
         pygame.time.delay(10)
 
-    return settings
+    return convert_to_text(settings)

@@ -53,6 +53,8 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
             game_status = STATUS_RUNNING
 
     player1, player2 = parse_player_setup(setup)
+    hints_mode = setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS
+    hints = []
     time1, time2 = 0, 0
     board = [[0 for _ in range(19)] for _ in range(19)]
     game_status = 0
@@ -69,6 +71,8 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
                     if display.mouse_click(board, turn):
                         turn = swtich_move(turn)
                         refresh_status(board)
+                        if hints_mode:
+                            hints = api.player_hints(board, turn)
 
         if game_status != STATUS_RUNNING:
             break
@@ -87,12 +91,11 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
         clock = get_time()
 
         display.draw_board(screen)
-        display.draw_pieces(screen, board)
+        display.draw_pieces(screen, board, hints)
         display.draw_menu(screen, turn, setup["start_rules"], player1, 3, time1, player2, 4, time2, time1 + time2)
 
         pygame.display.flip()
         pygame.time.delay(100)
-
 
     return game_status
 

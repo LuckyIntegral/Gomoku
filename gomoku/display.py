@@ -8,6 +8,7 @@ BOARD      = (213, 169, 94)
 WHITE      = (255, 255, 255)
 BLACK      = (0, 0, 0)
 GRAY       = (200, 200, 200)
+HINT       = (128, 128, 128)
 # so far i hate the red color, it is really ugly on gray background, make it more beautiful
 RED        = (255, 100, 100)
 BLUE       = (30, 144, 255)
@@ -44,7 +45,11 @@ def draw_piece(screen: pygame.Surface, x: int, y: int, color: tuple[int, int, in
     pygame.draw.circle(screen, BLACK, (40 + x * 42, 40 + y * 42), 20, 1)
 
 
-def draw_pieces(screen: pygame.Surface, board: list[list[int]]) -> None:
+def draw_pieces(
+    screen: pygame.Surface,
+    board: list[list[int]],
+    hints: list[tuple[int, int]] = None
+) -> None:
     ''' Draw all pieces '''
     for y, row in enumerate(board):
         for x, piece in enumerate(row):
@@ -52,6 +57,10 @@ def draw_pieces(screen: pygame.Surface, board: list[list[int]]) -> None:
                 draw_piece(screen, x, y, WHITE)
             elif piece == 2:
                 draw_piece(screen, x, y, BLACK)
+
+    if hints:
+        for x, y in hints:
+            draw_piece(screen, x, y, HINT)
 
 
 def mouse_click(board: list[list[int]], player: int) -> bool:

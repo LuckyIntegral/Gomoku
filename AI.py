@@ -7,58 +7,59 @@ from Constants import (
     CAPTURE_WEIGHT,
 )
 from Game import Game
+import time
 
 class AI:
-    def __init__(self, game: object, player: int) -> None:
-        self._game = copy.deepcopy(game)
+    def __init__(self, game: Game, player: int) -> None:
+        self._game = game
         self._player = player
-        self._memo = {}
         self._transposition_table = {}
 
     def _evaluate_board(self) -> int:
-        """
-        Evaluate the board based on the patterns
-        and returns the score
-        """
+        start_time = time.time()
         score = 0
         for pattern, weight in PATTERNS.items():
             score += self._game.count_pattern_on_board(pattern, self._player) * weight
             score -= self._game.count_pattern_on_board(pattern, 3 - self._player) * weight
+        end_time = time.time()
+        print(f"_evaluate_board took {end_time - start_time:.6f} seconds")
         return score
 
     def _hash_board(self) -> str:
-        """
-        Create a hash of the current board state
-        """
-        return str(self._game.get_board())
+        start_time = time.time()
+        board_hash = str(self._game.get_board())
+        end_time = time.time()
+        print(f"_hash_board took {end_time - start_time:.6f} seconds")
+        return board_hash
 
-    def minimax(self, player: int, depth: int, alpha: int, beta: int, is_maximizing: bool) -> tuple:
-        """
-        Minimax algorithm with alpha-beta pruning and memoization
-        returns the best score and the best move
-        """
+    def minimax(self, player: int, depth: int, alpha: float, beta: float, is_maximizing: bool) -> tuple:
+        start_time = time.time()
         board_hash = self._hash_board()
         transposition_key = (board_hash, depth, is_maximizing)
         if transposition_key in self._transposition_table:
+            end_time = time.time()
+            print(f"minimax (transposition table hit) took {end_time - start_time:.6f} seconds")
             return self._transposition_table[transposition_key]
 
         if depth == 0:
+            end_time = time.time()
+            print(f"minimax (depth 0) took {end_time - start_time:.6f} seconds")
             return self._evaluate_board(), None
 
         best_move = None
         moves = self._game.get_best_possible_moves(player)
 
-        # Move ordering: prioritize moves that capture the most stones
-        moves.sort(key=lambda move: self._game.count_captures(player, move[0], move[1]), reverse=True)
+        # Move ordering: prioritize moves based on a heuristic
+        moves.sort(key=lambda move: self._game.heuristic_evaluation(player, move[0], move[1]), reverse=True)
 
         if is_maximizing:
             best_score = -float('inf')
-            for move in moves:
-                old_game = copy.deepcopy(self._game)
-                captures = self._game.make_move(player, move[0], move[1])
+            for move in moves[:2]:
+                captures_count, captured_stones = self._game.make_move(player, move[0], move[1])
                 score, _ = self.minimax(3 - player, depth - 1, alpha, beta, False)
-                score += captures * CAPTURE_WEIGHT
-                self._game = old_game
+                score += captures_count * CAPTURE_WEIGHT
+                self._game.undo_the_move(player, move[0], move[1], captured_stones)  # Properly revert the move
+
                 if score > best_score:
                     best_score = score
                     best_move = move
@@ -67,12 +68,12 @@ class AI:
                     break
         else:
             best_score = float('inf')
-            for move in moves:
-                old_game = copy.deepcopy(self._game)
-                captures = self._game.make_move(player, move[0], move[1])
+            for move in moves[:2]:
+                captures_count, captured_stones = self._game.make_move(player, move[0], move[1])
                 score, _ = self.minimax(3 - player, depth - 1, alpha, beta, True)
-                score -= captures * CAPTURE_WEIGHT
-                self._game = old_game
+                score += captures_count * CAPTURE_WEIGHT
+                self._game.undo_the_move(player, move[0], move[1], captured_stones)  # Properly revert the move
+
                 if score < best_score:
                     best_score = score
                     best_move = move
@@ -81,14 +82,15 @@ class AI:
                     break
 
         self._transposition_table[transposition_key] = (best_score, best_move)
+        end_time = time.time()
+        print(f"minimax took {end_time - start_time:.6f} seconds")
         return best_score, best_move
 
     def iterative_deepening(self, player: int, max_depth: int) -> tuple:
-        """
-        Iterative deepening to progressively deepen the search
-        """
         best_move = None
-        for depth in range(1, max_depth + 1):
-            print(f"Depth: {depth}")
-            best_score, best_move = self.minimax(player, depth, -float('inf'), float('inf'), True)
+        print(f"Depth: {max_depth}")
+        start_time = time.time()
+        best_score, best_move = self.minimax(player, max_depth, -float('inf'), float('inf'), True)
+        end_time = time.time()
+        print(f"iterative_deepening (depth {max_depth}) took {end_time - start_time:.6f} seconds")
         return best_score, best_move

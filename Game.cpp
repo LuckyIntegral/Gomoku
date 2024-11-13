@@ -331,18 +331,24 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     for (auto move : moves)
     {
         makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
-        if (evaluateBoard(3 - player) >= THREE_UNCOVERED_WEIGHT * 2) {
+        if (evaluateBoard(3 - player) >= FOUR_UNCOVERED_WEIGHT / 2) {
             forcedMoves.push_back({move.first, move.second});
         }
         undoMove(3 - player, move.first, move.second, capturedStones);
         capturedStones.clear();
     }
-
+    moves = getBestPossibleMoves(player);
     // Check if placing a stone here continues a sequence that leads to a win
     for (auto move : moves)
     {
         makeMove(player, move.first, move.second, captureCount, capturedStones);
-        if (evaluateBoard(player) >= THREE_UNCOVERED_WEIGHT * 2) {
+        auto score = evaluateBoard(player);
+        if (score >= WIN_WEIGHT / 2) {
+            std::vector<std::pair<int, int>> result = {{move.first, move.second}};
+            undoMove(player, move.first, move.second, capturedStones);
+            return result;
+        }
+        else if (score >= THREE_UNCOVERED_WEIGHT * 2) {
             forcedMoves.push_back({move.first, move.second});
         }
         undoMove(player, move.first, move.second, capturedStones);

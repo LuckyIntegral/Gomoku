@@ -4,50 +4,48 @@
 #include <iostream>
 #include "Constants.hpp"
 
+template<typename Tuple, std::size_t... Is>
+std::string tupleToStringImpl(const Tuple& t, std::index_sequence<Is...>) {
+    std::ostringstream oss;
+    ((oss << (Is == 0 ? "" : ", ") << std::get<Is>(t)), ...);
+    return oss.str();
+}
+
+template<typename... Args>
+std::string tupleToString(const std::tuple<Args...>& t) {
+    return tupleToStringImpl(t, std::index_sequence_for<Args...>{});
+}
+
 AI::AI(Game& game, int player) : game(game), player(player) {}
 
 int AI::evaluateBoard() {
-    auto start = std::chrono::high_resolution_clock::now();
     int score = 0;
     for (const auto& [pattern, weight] : PATTERNS) {
         score += game.countPatternOnBoard(pattern, player) * weight;
         score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "evaluateBoard took " << elapsed.count() << " seconds" << std::endl;
     return score;
 }
 
 std::string AI::hashBoard() const {
-    auto start = std::chrono::high_resolution_clock::now();
     std::string boardHash;
     for (const auto& row : game.getBoard()) {
         for (int cell : row) {
             boardHash += std::to_string(cell);
         }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "hashBoard took " << elapsed.count() << " seconds" << std::endl;
     return boardHash;
 }
 
 std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha, int beta, bool isMaximizing) {
-    auto start = std::chrono::high_resolution_clock::now();
     std::string boardHash = hashBoard();
     auto transpositionKey = std::make_tuple(boardHash, depth, isMaximizing);
-    if (transpositionTable.find(boardHash) != transpositionTable.end()) {
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "minimax (transposition table hit) took " << elapsed.count() << " seconds" << std::endl;
-        return transpositionTable[boardHash];
+    std::string transpositionKeyStr = tupleToString(transpositionKey);
+    if (transpositionTable.find(transpositionKeyStr) != transpositionTable.end()) {
+        return transpositionTable[transpositionKeyStr];
     }
 
     if (depth == 0) {
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << " (depth 0) took " << elapsed.count() << " seconds" << std::endl;
         return {evaluateBoard(), {-1, -1}};
     }
 
@@ -55,6 +53,8 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
     std::vector<std::pair<int, int>> moves = game.getForcedMoves(player);
     if (moves.empty()) {
         moves = game.getBestPossibleMoves(player);
+    } else {
+        return {0, moves[0]};
     }
 
     // Move ordering: prioritize moves based on a heuristic
@@ -64,7 +64,8 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
 
     if (isMaximizing) {
         int bestScore = -WIN_WEIGHT;
-        for (const auto& move : moves) {
+        for (size_t i = 0; i < moves.size() && i < 3; ++i) {
+            const auto& move = moves[i];
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
             game.makeMove(player, move.first, move.second, capturesCount, capturedStones);
@@ -81,19 +82,17 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
                 break;
             }
         }
-        transpositionTable[boardHash] = {bestScore, bestMove};
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "minimax took " << elapsed.count() << " seconds" << std::endl;
+        transpositionTable[transpositionKeyStr] = {bestScore, bestMove};
         return {bestScore, bestMove};
     } else {
         int bestScore = WIN_WEIGHT;
-        for (const auto& move : moves) {
+        for (size_t i = 0; i < moves.size() && i < 3; ++i) {
+            const auto& move = moves[i];
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
             game.makeMove(player, move.first, move.second, capturesCount, capturedStones);
             auto [score, _] = minimax(3 - player, depth - 1, alpha, beta, true);
-            score += capturesCount * CAPTURE_WEIGHT;
+            score -= capturesCount * CAPTURE_WEIGHT;
             game.undoMove(player, move.first, move.second, capturedStones);
 
             if (score < bestScore) {
@@ -105,10 +104,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
                 break;
             }
         }
-        transpositionTable[boardHash] = {bestScore, bestMove};
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "minimax took " << elapsed.count() << " seconds" << std::endl;
+        transpositionTable[transpositionKeyStr] = {bestScore, bestMove};
         return {bestScore, bestMove};
     }
 }
@@ -117,11 +113,12 @@ std::pair<int, std::pair<int, int>> AI::iterativeDeepening(int player, int maxDe
     std::cout << "Depth: " << maxDepth << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     auto [bestScore, bestMove] = minimax(player, 1, -WIN_WEIGHT, WIN_WEIGHT, true);
-    for (int i = 2; i <= maxDepth; ++i)
-    {
-        std::tie(bestScore, bestMove) = minimax(player, i, -WIN_WEIGHT, WIN_WEIGHT, true);
-        std::cout << i << std::endl;
-    }
+    // for (int i = 2; i <= maxDepth; ++i)
+    // {
+    //     std::tie(bestScore, bestMove) = minimax(player, i, -WIN_WEIGHT, WIN_WEIGHT, true);
+    //     std::cout << i << std::endl;
+    // }
+    std::tie(bestScore, bestMove) = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "iterativeDeepening (depth " << maxDepth << ") took " << elapsed.count() << " seconds" << std::endl;

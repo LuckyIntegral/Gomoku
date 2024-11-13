@@ -35,3 +35,4 @@ objs/
 Gomoku
 .vscode/
 __pycache__/
+build/

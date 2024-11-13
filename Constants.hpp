@@ -9,12 +9,12 @@ const int PLAYER2 = 2;
 const int EMPTY = 0;
 
 const int WIN_WEIGHT = 10000000;
-const int FOUR_UNCOVERED_WEIGHT = 1000;
+const int FOUR_UNCOVERED_WEIGHT = 100000;
 const int THREE_UNCOVERED_WEIGHT = 600;
 const int TWO_UNCOVERED_WEIGHT = 1;
 const int FOUR_COVERED_WEIGHT = 90;
 const int THREE_COVERED_WEIGHT = 10;
-const int CAPTURE_WEIGHT = 50000;
+const int CAPTURE_WEIGHT = 700;
 
 const std::vector<int> WIN = {1, 1, 1, 1, 1};
 

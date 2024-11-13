@@ -321,3 +321,32 @@ int Game::countPatternOnBoard(const std::vector<int>& pattern, int player) const
     }
     return count;
 }
+
+std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
+    std::vector<std::pair<int, int>> forcedMoves;
+    std::vector<std::pair<int, int>> capturedStones;
+    int captureCount = 0;
+        // Check if placing a stone here blocks an opponent's winning move
+    auto moves = getBestPossibleMoves(3 - player);
+    for (auto move : moves)
+    {
+        makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
+        if (evaluateBoard(3 - player) >= WIN_WEIGHT) {
+            forcedMoves.push_back({move.first, move.second});
+        }
+        undoMove(3 - player, move.first, move.second, capturedStones);
+        capturedStones.clear();
+    }
+
+    // Check if placing a stone here continues a sequence that leads to a win
+    for (auto move : moves)
+    {
+        makeMove(player, move.first, move.second, captureCount, capturedStones);
+        if (evaluateBoard(player) >= WIN_WEIGHT) {
+            forcedMoves.push_back({move.first, move.second});
+        }
+        undoMove(player, move.first, move.second, capturedStones);
+        capturedStones.clear();
+    }
+    return forcedMoves;
+}

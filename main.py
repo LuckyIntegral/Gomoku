@@ -16,13 +16,14 @@ def main():
         print_board(game.getBoard())
         print(f"Player {current_player}'s turn")
         if count % 2 == 0:
-            ai = AI(game, current_player)  # Assuming you have AI class in Python that uses game_module
+            ai = gm.AI(game, current_player)  # Assuming you have AI class in Python that uses game_module
             start = time.time()
-            score, move = ai.iterative_deepening(current_player, 3)
+            score, move = ai.iterativeDeepening(current_player, 3)
             print(f"Score: {score}")
             print(f"Time taken: {time.time() - start}")
             if move is not None:
-                captures = game.makeMove(current_player, move[0], move[1])
+                captures = 0
+                captures = game.makeMove(current_player, move[0], move[1], captures, [])
                 print(f"Player {current_player} made a move at ({move[0]}, {move[1]}) and captured {captures} stones.")
             else:
                 print("No move available.")
@@ -40,7 +41,7 @@ def main():
             count -= 1
             continue
 
-        captures = game.makeMove(current_player, row, col)
+        captures = game.makeMove(current_player, row, col, 0, [])
         print(f"Player {current_player} made a move at ({row}, {col}) and captured {captures} stones.")
 
         best_moves = game.getBestPossibleMoves(current_player)

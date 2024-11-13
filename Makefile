@@ -21,6 +21,7 @@ SRCS		= \
 OBJSDIR		= $(SRCSDIR)/objs
 DEPS		= $(SRCS:$(SRCSDIR)/%.cpp=$(OBJSDIR)/%.d)
 OBJS		= $(SRCS:$(SRCSDIR)/%.cpp=$(OBJSDIR)/%.o)
+BUILD 		= build
 
 ###############################################################################
 ######                              RULES                                ######
@@ -37,6 +38,7 @@ $(OBJSDIR)/%.o	: $(SRCSDIR)/%.cpp
 
 clean	:
 		$(RM) $(OBJSDIR)
+		$(RM) $(BUILD)
 
 fclean	: clean
 		$(RM) $(OBJSDIR) $(NAME)
@@ -51,5 +53,11 @@ run		:
 		@./$(NAME)
 
 -include $(DEPS)
+
+build	:
+	python setup.py build_ext --inplace
+
+pyrun	:
+	python main.py
 
 .PHONY: all clean fclean re run

@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include "Game.hpp"
+#include "AI.hpp"
 
 namespace py = pybind11;
 
@@ -14,4 +15,8 @@ PYBIND11_MODULE(game_module, m) {
         .def("getBestPossibleMoves", &Game::getBestPossibleMoves)
         .def("isValidMove", &Game::isValidMove)
         .def("heuristicEvaluation", &Game::heuristicEvaluation);
+
+    py::class_<AI>(m, "AI")
+        .def(py::init<Game&, int>())
+        .def("iterativeDeepening", &AI::iterativeDeepening);
 }

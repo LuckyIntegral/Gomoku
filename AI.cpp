@@ -47,7 +47,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
     if (depth == 0) {
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = end - start;
-        std::cout << "minimax (depth 0) took " << elapsed.count() << " seconds" << std::endl;
+        std::cout << " (depth 0) took " << elapsed.count() << " seconds" << std::endl;
         return {evaluateBoard(), {-1, -1}};
     }
 
@@ -63,7 +63,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
     });
 
     if (isMaximizing) {
-        int bestScore = -1000000;
+        int bestScore = -WIN_WEIGHT;
         for (const auto& move : moves) {
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
@@ -87,7 +87,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
         std::cout << "minimax took " << elapsed.count() << " seconds" << std::endl;
         return {bestScore, bestMove};
     } else {
-        int bestScore = 1000000;
+        int bestScore = WIN_WEIGHT;
         for (const auto& move : moves) {
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
@@ -116,7 +116,12 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
 std::pair<int, std::pair<int, int>> AI::iterativeDeepening(int player, int maxDepth) {
     std::cout << "Depth: " << maxDepth << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
-    auto [bestScore, bestMove] = minimax(player, maxDepth, -1000000, 1000000, true);
+    auto [bestScore, bestMove] = minimax(player, 1, -WIN_WEIGHT, WIN_WEIGHT, true);
+    for (int i = 2; i <= maxDepth; ++i)
+    {
+        std::tie(bestScore, bestMove) = minimax(player, i, -WIN_WEIGHT, WIN_WEIGHT, true);
+        std::cout << i << std::endl;
+    }
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "iterativeDeepening (depth " << maxDepth << ") took " << elapsed.count() << " seconds" << std::endl;

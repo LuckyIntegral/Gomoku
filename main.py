@@ -18,7 +18,7 @@ def main():
         if count % 2 == 0:
             ai = gm.AI(game, current_player)  # Assuming you have AI class in Python that uses game_module
             start = time.time()
-            score, move = ai.iterativeDeepening(current_player, 3)
+            score, move = ai.iterativeDeepening(current_player, 10)
             print(f"Score: {score}")
             print(f"Time taken: {time.time() - start}")
             if move is not None:

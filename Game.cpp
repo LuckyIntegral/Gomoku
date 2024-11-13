@@ -331,7 +331,7 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     for (auto move : moves)
     {
         makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
-        if (evaluateBoard(3 - player) >= WIN_WEIGHT) {
+        if (evaluateBoard(3 - player) >= THREE_UNCOVERED_WEIGHT * 2) {
             forcedMoves.push_back({move.first, move.second});
         }
         undoMove(3 - player, move.first, move.second, capturedStones);
@@ -342,7 +342,7 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     for (auto move : moves)
     {
         makeMove(player, move.first, move.second, captureCount, capturedStones);
-        if (evaluateBoard(player) >= WIN_WEIGHT) {
+        if (evaluateBoard(player) >= THREE_UNCOVERED_WEIGHT * 2) {
             forcedMoves.push_back({move.first, move.second});
         }
         undoMove(player, move.first, move.second, capturedStones);

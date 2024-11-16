@@ -1,87 +1,115 @@
-# from Constants import EMPTY, PLAYER1, PLAYER2, WIN_WEIGHT
-import game_module as gm
+''' Main file for Gomoku game '''
+import pygame
+import random
 import time
+from gomoku import display, game_setup, ai_api as api
 
-from colorama import Fore, Style, init
 
-PLAYER1 = 1
-PLAYER2 = 2
-EMPTY = 0
+STATUS_RUNNING = 0
+STATUS_WIN_PLAYER1 = 1
+STATUS_WIN_PLAYER2 = 2
+STATUS_DRAW = 3
+STATUS_TERMINATED = 4
 
-init(autoreset=True)
-def print_board(board):
-    for row in board:
-        row_str = ""
-        for cell in row:
-            if cell == EMPTY:
-                row_str += " 0 "
-            elif cell == PLAYER1:
-                row_str += " " + Fore.RED + "1" + Fore.RESET + " "
-            else:
-                row_str += " " + Fore.BLUE + "2" + Fore.RESET + " "
-        print(row_str)
+def parse_player_setup(setup: dict[str, int]) -> tuple[str, str]:
+    ''' Parse the player setup '''
+    if setup["color"] == game_setup.OPTION_RANDOM:
+        setup["color"] = random.choice([game_setup.OPTION_WHITE, game_setup.OPTION_BLACK])
+
+    if setup["mode"] == game_setup.OPTION_PLAYER_VS_AI:
+        if setup["color"] == game_setup.OPTION_WHITE:
+            return "Player", "AI"
+        return "AI", "Player"
+
+    return "Player", "Player"
+
+
+def swtich_move(turn: int) -> int:
+    ''' Switch the turn
+    1 -> 2
+    2 -> 1
+    '''
+    return 3 - turn
+
+
+def get_time() -> int:
+    ''' Get the current time in seconds '''
+    return time.time_ns() // 10000000
+
+
+
+def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
+    ''' Main game loop '''
+    def refresh_status(board: list[list[int]]) -> None:
+        ''' Refresh the game status '''
+        nonlocal game_status
+        if api.is_win(board, 1):
+            game_status = STATUS_WIN_PLAYER1
+        elif api.is_win(board, 2):
+            game_status = STATUS_WIN_PLAYER2
+        elif api.is_draw(board):
+            game_status = STATUS_DRAW
+        else:
+            game_status = STATUS_RUNNING
+
+    player1, player2 = parse_player_setup(setup)
+    hints_mode = setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS
+    hints = []
+    time1, time2 = 0, 0
+    board = [[0 for _ in range(19)] for _ in range(19)]
+    game_status = 0
+    turn = 1
+    clock = get_time()
+
+    while game_status == STATUS_RUNNING:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_status = STATUS_TERMINATED
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                # Player moves
+                if (turn == 1 and player1 == "Player") or (turn == 2 and player2 == "Player"):
+                    if display.mouse_click(board, turn):
+                        turn = swtich_move(turn)
+                        refresh_status(board)
+                        if hints_mode:
+                            hints = api.player_hints(board, turn)
+
+        if game_status != STATUS_RUNNING:
+            break
+
+        # AI moves
+        if (turn == 1 and player1 == "AI") or (turn == 2 and player2 == "AI"):
+            x, y = api.ai_move(board, turn)
+            board[y][x] = turn
+            turn = swtich_move(turn)
+            refresh_status(board)
+
+        if turn == 1:
+            time1 += get_time() - clock
+        else:
+            time2 += get_time() - clock
+        clock = get_time()
+
+        display.draw_board(screen)
+        display.draw_pieces(screen, board, hints)
+        display.draw_menu(screen, turn, setup["start_rules"], player1, 3, time1, player2, 4, time2, time1 + time2)
+
+        pygame.display.flip()
+        pygame.time.delay(100)
+
+    return game_status
+
 
 def main():
-    game = gm.Game()
-    current_player = PLAYER1
+    ''' Main function for Gomoku game '''
+    screen: pygame.Surface = display.init()
 
-    count = 0
-    while True:
-        count += 1
-        print(f"Player {current_player}'s turn")
-        if count % 2 == 0:
-            ai = gm.AI(game, current_player)  # Assuming you have AI class in Python that uses game_module
-            start = time.time()
-            score, move = ai.iterativeDeepening(current_player, 10)
-            print(f"Score: {score}")
-            print(f"Time taken: {time.time() - start}")
-            if move is not None:
-                captures = 0
-                captures = game.makeMove(current_player, move[0], move[1], captures, [])
-                print(f"Player {current_player} made a move at ({move[0]}, {move[1]}) and captured {captures} stones.")
-            else:
-                print("No move available.")
-            current_player = PLAYER2 if current_player == PLAYER1 else PLAYER1
-            print_board(game.getBoard())
-            time.sleep(4)
-            continue
-        else:
-            ai = gm.AI(game, current_player)  # Assuming you have AI class in Python that uses game_module
-            start = time.time()
-            score, move = ai.iterativeDeepening(current_player, 10)
-            print(f"Score: {score}")
-            print(f"Time taken: {time.time() - start}")
-            if move is not None:
-                captures = 0
-                captures = game.makeMove(current_player, move[0], move[1], captures, [])
-                print(f"Player {current_player} made a move at ({move[0]}, {move[1]}) and captured {captures} stones.")
-            else:
-                print("No move available.")
-            current_player = PLAYER2 if current_player == PLAYER1 else PLAYER1
-            print_board(game.getBoard())
-            time.sleep(4)
-            continue
-        try:
-            row = int(input("Enter row (0-18): "))
-            col = int(input("Enter col (0-18): "))
-        except ValueError:
-            print("Invalid input. Please enter numbers between 0 and 18.")
-            continue
+    setup = game_setup.prompt_game_setup(screen)
+    game_status = game_loop(screen, setup)
 
-        if not game.isValidMove(current_player, row, col):
-            print("Invalid move. Try again.")
-            count -= 1
-            continue
+    print("Game Over")
+    print(f"Exit status {game_status}")
 
-        captures = game.makeMove(current_player, row, col, 0, [])
-        print(f"Player {current_player} made a move at ({row}, {col}) and captured {captures} stones.")
-
-        best_moves = game.getBestPossibleMoves(current_player)
-        print(f"Best possible moves for Player {current_player}: {best_moves}")
-        print(game.getBoard())
-
-        # Switch player
-        current_player = PLAYER2 if current_player == PLAYER1 else PLAYER1
 
 if __name__ == "__main__":
     main()

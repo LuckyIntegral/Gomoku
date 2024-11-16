@@ -356,3 +356,11 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     }
     return forcedMoves;
 }
+
+int Game::getCaptures(int player) const {
+    if (player == PLAYER1) {
+        return this->player1Capture;
+    } else {
+        return this->player2Capture;
+    }
+}

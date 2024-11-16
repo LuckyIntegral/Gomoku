@@ -39,5 +39,5 @@ class Game {
         int heuristicEvaluation(int player, int row, int col);
         int countPatternOnBoard(const std::vector<int>& pattern, int player) const;
         std::vector<std::pair<int, int>> getForcedMoves(int player);
-
+        int getCaptures(int player) const;
 };

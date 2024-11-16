@@ -11,7 +11,7 @@ STATUS_WIN_PLAYER1 = 1
 STATUS_WIN_PLAYER2 = 2
 STATUS_DRAW = 3
 STATUS_TERMINATED = 4
-DEPTH = 10
+DEPTH = 5
 
 def parse_player_setup(setup: dict[str, int]) -> tuple[str, str]:
     ''' Parse the player setup '''
@@ -59,8 +59,17 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
         display.draw_menu(screen, turn, setup["start_rules"], player1, capt[0], player2, capt[1], get_time() - clock)
         pygame.display.flip()
 
+    def aftermove():
+        ''' After move '''
+        nonlocal turn, clock
+        turn = swtich_move(turn)
+        refresh_status(game.getBoard())
+        sync_display(game.getBoard())
+        capt[turn - 1] += game.getCaptures(turn)
+        clock = get_time()
+
     player1, player2 = parse_player_setup(setup)
-    hints_mode = setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS
+    # hints_mode = setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS
     game = gm.Game()
     hints = []
     capt = [0, 0]
@@ -77,29 +86,19 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
                 # Player moves
                 if (turn == 1 and player1 == "Player") or (turn == 2 and player2 == "Player"):
                     move, inside = display.mouse_click(game.getBoard())
-                    if inside:
-                        if game.makeMove(turn, move[0], move[1], capt[turn - 1], []):
-                            capt[turn - 1] += 1
-                        turn = swtich_move(turn)
-                        refresh_status(game.getBoard())
-                        if hints_mode:
-                            hints = api.player_hints(game.getBoard(), turn)
-                        sync_display(game.getBoard())
-                        clock = get_time()
+                    if inside and game.isValidMove(turn, move[0], move[1]):
+                        game.makeMove(turn, move[0], move[1], capt[turn - 1], [])
+                        # if hints_mode:
+                        #     hints = api.player_hints(game.getBoard(), turn)
+                        aftermove()
 
         if game_status != STATUS_RUNNING:
             break
 
         # AI moves
         if (turn == 1 and player1 == "AI") or (turn == 2 and player2 == "AI"):
-            ai = gm.AI(game, turn)
-            _, move = ai.iterativeDeepening(turn, DEPTH)
-            if game.makeMove(turn, move[0], move[1], capt[turn - 1], []):
-                capt[turn - 1] += 1
-            turn = swtich_move(turn)
-            refresh_status(game.getBoard())
-            sync_display(game.getBoard())
-            clock = get_time()
+            api.ai_move(game, turn, DEPTH, capt[turn - 1])
+            aftermove()
 
         pygame.time.delay(100)
 

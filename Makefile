@@ -17,6 +17,7 @@ re		:
 	make all
 
 run		:
+	make all
 	python3 main.py
 
 init	:

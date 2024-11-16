@@ -14,7 +14,8 @@ PYBIND11_MODULE(game_module, m) {
         .def("evaluateBoard", &Game::evaluateBoard)
         .def("getBestPossibleMoves", &Game::getBestPossibleMoves)
         .def("isValidMove", &Game::isValidMove)
-        .def("heuristicEvaluation", &Game::heuristicEvaluation);
+        .def("heuristicEvaluation", &Game::heuristicEvaluation)
+        .def("getCaptures", &Game::getCaptures);
 
     py::class_<AI>(m, "AI")
         .def(py::init<Game&, int>())

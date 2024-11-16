@@ -63,16 +63,15 @@ def draw_pieces(
             draw_piece(screen, x, y, HINT)
 
 
-def mouse_click(board: list[list[int]], player: int) -> bool:
+def mouse_click(board: list[list[int]]) -> tuple[tuple[int, int], bool]:
     ''' Get the mouse click '''
     x, y = pygame.mouse.get_pos()
     x = int((x - 40) / 42 + 0.5)
     y = int((y - 40) / 42 + 0.5)
     if 0 <= x < BOARD_SIZE and 0 <= y < BOARD_SIZE:
         if board[y][x] == 0:
-            board[y][x] = player
-            return True
-    return False
+            return (y, x), True
+    return (0, 0), False
 
 
 def draw_menu(
@@ -81,10 +80,8 @@ def draw_menu(
     start_rule: str,
     player1_name: str,
     player1_captured: int,
-    player1_time: int,
     player2_name: str,
     player2_captured: int,
-    player2_time: int,
     total_time: int
 ) -> None:
     ''' Draw the menu '''
@@ -105,8 +102,6 @@ def draw_menu(
     screen.blit(text, (850, 220))
 
     # Display player1 information
-    # time should be displayed in MM:SS:ms format
-    player1_time_str = f'{player1_time // 6000}:{player1_time // 100 % 60:02}:{player1_time % 100:02}'
     player1_color_ball = WHITE
     pygame.draw.circle(screen, player1_color_ball, (1200, 330), 40)
     pygame.draw.rect(screen, GRAY, (840, 265, 430, 135), 2)
@@ -114,13 +109,12 @@ def draw_menu(
     screen.blit(text, (850, 280))
     text = font.render(player1_name, True, RED)
     screen.blit(text, (960, 280))
-    text = font.render(f"Captured: {player1_captured} / 5", True, WHITE)
+    text = font.render(f"Captured:", True, WHITE)
     screen.blit(text, (850, 320))
-    text = font.render(f"Time: {player1_time_str}", True, RED)
+    text = font.render(f"{player1_captured} / 5", True, RED)
     screen.blit(text, (850, 360))
 
     # Display player2 information
-    player2_time_str = f'{player2_time // 6000}:{player2_time // 100 % 60:02}:{player2_time % 100:02}'
     player2_color_ball = BLACK
     pygame.draw.circle(screen, player2_color_ball, (1200, 470), 40)
     pygame.draw.rect(screen, GRAY, (840, 405, 430, 135), 2)
@@ -128,14 +122,12 @@ def draw_menu(
     screen.blit(text, (850, 420))
     text = font.render(player2_name, True, BLUE)
     screen.blit(text, (960, 420))
-    text = font.render(f"Captured: {player2_captured} / 5", True, WHITE)
+    text = font.render(f"Captured:", True, WHITE)
     screen.blit(text, (850, 460))
-    text = font.render(f"Time: {player2_time_str}", True, BLUE)
+    text = font.render(f"{player2_captured} / 5", True, BLUE)
     screen.blit(text, (850, 500))
 
-    # Display the total time spent in the game
-    total_time_str = time.strftime('%M:%S', time.gmtime(total_time))
-    text = font.render(f"Total Time: {total_time // 6000}:{total_time // 100 % 60:02}:{total_time % 100:02}", True, WHITE)
+    text = font.render(f"Time spent on the last move: {total_time // 6000}:{total_time // 100 % 60:02}:{total_time % 100:02}", True, WHITE)
     screen.blit(text, (850, 560))
 
     # Display the rules of Gomoku

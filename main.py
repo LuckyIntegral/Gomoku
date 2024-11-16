@@ -1,8 +1,12 @@
-from Constants import EMPTY, PLAYER1, PLAYER2, WIN_WEIGHT
+# from Constants import EMPTY, PLAYER1, PLAYER2, WIN_WEIGHT
 import game_module as gm
 import time
 
 from colorama import Fore, Style, init
+
+PLAYER1 = 1
+PLAYER2 = 2
+EMPTY = 0
 
 init(autoreset=True)
 def print_board(board):

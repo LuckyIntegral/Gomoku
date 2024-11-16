@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include "Constants.hpp"
 
 template<typename Tuple, std::size_t... Is>

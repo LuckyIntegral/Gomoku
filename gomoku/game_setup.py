@@ -201,6 +201,6 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
                     return convert_to_text(settings)
 
         pygame.display.flip()
-        pygame.time.delay(100)
+        pygame.time.delay(50)
 
     return convert_to_text(settings)

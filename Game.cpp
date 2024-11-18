@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
-#include <Constants.hpp>
+#include "Constants.hpp"
 
 Game::Game() {
     this->player1Capture = 0;

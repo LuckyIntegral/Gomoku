@@ -117,6 +117,9 @@ int Game::evaluateBoard(int player) const {
         score += countPatternOnBoard(pattern, player) * weight;
         //score -= countPatternOnBoard(pattern, 3 - player) * weight;
     }
+    if (score < FOUR_UNCOVERED_WEIGHT && score > FOUR_COVERED_WEIGHT * 2) {
+        score = THREE_UNCOVERED_WEIGHT * 10;
+    }
     return score;
 }
 

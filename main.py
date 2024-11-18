@@ -65,7 +65,7 @@ def game_loop(screen: pygame.Surface, setup: dict[str, int]) -> int:
         turn = swtich_move(turn)
         refresh_status(game.getBoard())
         sync_display(game.getBoard())
-        capt[turn - 1] += game.getCaptures(turn)
+        capt[turn - 1] = game.getCaptures(turn)
         clock = get_time()
 
     player1, player2 = parse_player_setup(setup)

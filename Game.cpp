@@ -355,6 +355,8 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     std::vector<std::pair<int, int>> importantMoves;
     std::vector<std::pair<int, int>> capturedStones;
     int captureCount = 0;
+    int maxScore = 0;
+    bool isBreakingWin = false;
         // Check if placing a stone here blocks an opponent's winning move
     auto moves = getBestPossibleMoves(3 - player);
     for (auto move : moves)
@@ -373,8 +375,14 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
                     std::cout << "Breaking Win Capture: " << item.first << " " << item.second << std::endl;
                 }
                 forcedMoves.insert(forcedMoves.begin(), breakingWinCaptures.begin(), breakingWinCaptures.end());
-            }       
-            forcedMoves.push_back({move.first, move.second});
+                isBreakingWin = true;
+            } else if (!isBreakingWin) {
+                if (score > maxScore) {
+                    maxScore = score;
+                    forcedMoves.clear();
+                    forcedMoves.push_back({move.first, move.second});
+                }
+            }
         }
         else if (score >= CAPTURE_WEIGHT) {
             importantMoves.push_back({move.first, move.second});

@@ -10,11 +10,11 @@ const int EMPTY = 0;
 
 const int WIN_WEIGHT = 10000000;
 const int FOUR_UNCOVERED_WEIGHT = 100000;
-const int THREE_UNCOVERED_WEIGHT = 600;
+const int THREE_UNCOVERED_WEIGHT = 5000;
 const int TWO_UNCOVERED_WEIGHT = 1;
-const int FOUR_COVERED_WEIGHT = 90;
+const int FOUR_COVERED_WEIGHT = 4000;
 const int THREE_COVERED_WEIGHT = 10;
-const int CAPTURE_WEIGHT = 700;
+const int CAPTURE_WEIGHT = 30000;
 
 const std::vector<int> WIN = {1, 1, 1, 1, 1};
 
@@ -41,6 +41,11 @@ const std::vector<std::vector<int>> FOUR_COVERED = {
     {2, 1, 1, 0, 1, 1},
     {2, 1, 0, 1, 1, 1},
     {2, 0, 1, 1, 1, 1},
+    {0, 1, 1, 1, 1, 2},
+    {1, 1, 1, 1, 0, 2},
+    {1, 1, 1, 0, 1, 2},
+    {1, 1, 0, 1, 1, 2},
+    {1, 0, 1, 1, 1, 2},
 };
 
 // const std::vector<std::vector<int>> THREE_COVERED = {

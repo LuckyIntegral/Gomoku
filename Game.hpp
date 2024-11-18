@@ -19,6 +19,7 @@ class Game {
         bool checkPatternVertical(const std::vector<int>& pattern, int row, int col) const;
         bool checkPatternRightDiagonal(const std::vector<int>& pattern, int row, int col) const;
         bool checkPatternLeftDiagonal(const std::vector<int>& pattern, int row, int col) const;
+        std::vector<std::pair<int, int>> getBreakingWinCaptures(const std::vector<std::pair<int, int>>& moves, int player);
 
         bool isLeftHorizontalCapture(int player, int row, int col) const;
         bool isRightHorizontalCapture(int player, int row, int col) const;
@@ -41,4 +42,5 @@ class Game {
         int countPatternOnBoard(const std::vector<int>& pattern, int player) const;
         std::vector<std::pair<int, int>> getForcedMoves(int player);
         int getCaptures(int player) const;
+        bool isWin(int player) const;
 };

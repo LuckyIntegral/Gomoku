@@ -65,7 +65,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
 
     if (isMaximizing) {
         int bestScore = -WIN_WEIGHT;
-        for (size_t i = 0; i < moves.size() && i < 3; ++i) {
+        for (size_t i = 0; i < moves.size() && i < 100; ++i) {
             const auto& move = moves[i];
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
@@ -87,7 +87,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
         return {bestScore, bestMove};
     } else {
         int bestScore = WIN_WEIGHT;
-        for (size_t i = 0; i < moves.size() && i < 3; ++i) {
+        for (size_t i = 0; i < moves.size() && i < 100; ++i) {
             const auto& move = moves[i];
             int capturesCount;
             std::vector<std::pair<int, int>> capturedStones;
@@ -113,13 +113,13 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
 std::pair<int, std::pair<int, int>> AI::iterativeDeepening(int player, int maxDepth) {
     std::cout << "Depth: " << maxDepth << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
-    auto [bestScore, bestMove] = minimax(player, 1, -WIN_WEIGHT, WIN_WEIGHT, true);
+    auto [bestScore, bestMove] = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
     // for (int i = 2; i <= maxDepth; ++i)
     // {
     //     std::tie(bestScore, bestMove) = minimax(player, i, -WIN_WEIGHT, WIN_WEIGHT, true);
     //     std::cout << i << std::endl;
     // }
-    std::tie(bestScore, bestMove) = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
+    //std::tie(bestScore, bestMove) = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "iterativeDeepening (depth " << maxDepth << ") took " << elapsed.count() << " seconds" << std::endl;

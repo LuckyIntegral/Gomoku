@@ -23,7 +23,7 @@ int AI::evaluateBoard() {
     int score = 0;
     for (const auto& [pattern, weight] : PATTERNS) {
         score += game.countPatternOnBoard(pattern, player) * weight;
-        score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
+        //score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
     }
     return score;
 }
@@ -55,7 +55,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
     if (moves.empty()) {
         moves = game.getBestPossibleMoves(player);
     } else {
-        return {0, moves[0]};
+        return {WIN_WEIGHT * 2, moves[0]};
     }
 
     // Move ordering: prioritize moves based on a heuristic
@@ -93,7 +93,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
             std::vector<std::pair<int, int>> capturedStones;
             game.makeMove(player, move.first, move.second, capturesCount, capturedStones);
             auto [score, _] = minimax(3 - player, depth - 1, alpha, beta, true);
-            score -= capturesCount * CAPTURE_WEIGHT;
+            score += capturesCount * CAPTURE_WEIGHT;
             game.undoMove(player, move.first, move.second, capturedStones);
 
             if (score < bestScore) {

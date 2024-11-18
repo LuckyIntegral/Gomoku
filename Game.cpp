@@ -1,6 +1,7 @@
 #include "Game.hpp"
 #include <algorithm>
 #include <numeric>
+#include <iostream>
 
 Game::Game() : player1Capture(0), player2Capture(0) {
     for (auto& row : board) {
@@ -97,7 +98,7 @@ int Game::evaluateBoard(int player) const {
     int score = 0;
     for (const auto& [pattern, weight] : PATTERNS) {
         score += countPatternOnBoard(pattern, player) * weight;
-        score -= countPatternOnBoard(pattern, 3 - player) * weight;
+        //score -= countPatternOnBoard(pattern, 3 - player) * weight;
     }
     return score;
 }
@@ -295,9 +296,18 @@ bool Game::checkPatternVertical(const std::vector<int>& pattern, int row, int co
     return true;
 }
 
-bool Game::checkPatternDiagonal(const std::vector<int>& pattern, int row, int col) const {
+bool Game::checkPatternRightDiagonal(const std::vector<int>& pattern, int row, int col) const {
     for (size_t i = 0; i < pattern.size(); ++i) {
         if (row + i >= 19 || col + i >= 19 || board[row + i][col + i] != pattern[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Game::checkPatternLeftDiagonal(const std::vector<int>& pattern, int row, int col) const {
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        if (row + i >= 19 || col - i < 0 || board[row + i][col - i] != pattern[i]) {
             return false;
         }
     }
@@ -316,7 +326,8 @@ int Game::countPatternOnBoard(const std::vector<int>& pattern, int player) const
         for (int col = 0; col < 19; ++col) {
             count += checkPatternHorizontal(newPattern, row, col);
             count += checkPatternVertical(newPattern, row, col);
-            count += checkPatternDiagonal(newPattern, row, col);
+            count += checkPatternRightDiagonal(newPattern, row, col);
+            count += checkPatternLeftDiagonal(newPattern, row, col);
         }
     }
     return count;
@@ -331,7 +342,9 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     for (auto move : moves)
     {
         makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
-        if (evaluateBoard(3 - player) >= FOUR_UNCOVERED_WEIGHT / 2) {
+        auto score = evaluateBoard(3 - player);
+        std::cout << "Opponent Score: " << score << std::endl;
+        if (score >= FOUR_UNCOVERED_WEIGHT) {
             forcedMoves.push_back({move.first, move.second});
         }
         undoMove(3 - player, move.first, move.second, capturedStones);
@@ -343,7 +356,8 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     {
         makeMove(player, move.first, move.second, captureCount, capturedStones);
         auto score = evaluateBoard(player);
-        if (score >= WIN_WEIGHT / 2) {
+        std::cout << "Player Score: " << score << std::endl;
+        if (score >= WIN_WEIGHT) {
             std::vector<std::pair<int, int>> result = {{move.first, move.second}};
             undoMove(player, move.first, move.second, capturedStones);
             return result;

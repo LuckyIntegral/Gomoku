@@ -36,11 +36,11 @@ const std::vector<std::vector<int>> TWO_UNCOVERED = {
 };
 
 const std::vector<std::vector<int>> FOUR_COVERED = {
-    {2, 1, 1, 1, 1, 0, 2},
-    {2, 1, 1, 1, 0, 1, 2},
-    {2, 1, 1, 0, 1, 1, 2},
-    {2, 1, 0, 1, 1, 1, 2},
-    {2, 0, 1, 1, 1, 1, 2},
+    {2, 1, 1, 1, 1, 0},
+    {2, 1, 1, 1, 0, 1},
+    {2, 1, 1, 0, 1, 1},
+    {2, 1, 0, 1, 1, 1},
+    {2, 0, 1, 1, 1, 1},
 };
 
 // const std::vector<std::vector<int>> THREE_COVERED = {

@@ -96,7 +96,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
             std::vector<std::pair<int, int>> capturedStones;
             game.makeMove(player, move.first, move.second, capturesCount, capturedStones);
             auto [score, _] = minimax(3 - player, depth - 1, alpha, beta, true);
-            score += capturesCount * CAPTURE_WEIGHT;
+            score -= capturesCount * CAPTURE_WEIGHT;
             game.undoMove(player, move.first, move.second, capturedStones);
 
             if (score < bestScore) {

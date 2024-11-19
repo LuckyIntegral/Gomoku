@@ -9,6 +9,7 @@
 class Game {
     private:
         std::array<std::array<int, 19>, 19> board;
+        std::set<std::pair<int, int>> occupiedPositions;
         int player1Capture;
         int player2Capture;
 

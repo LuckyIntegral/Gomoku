@@ -11,7 +11,7 @@ STATUS_WIN_PLAYER1 = 1
 STATUS_WIN_PLAYER2 = 2
 STATUS_DRAW = 3
 STATUS_TERMINATED = 4
-DEPTH = 10
+DEPTH = 3
 
 def parse_player_setup(setup: dict[str, int]) -> tuple[str, str]:
     ''' Parse the player setup '''

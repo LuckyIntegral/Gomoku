@@ -3,13 +3,13 @@ import game_module as gm
 import random
 
 
-def ai_move(game, turn: int, deepth: int, capt) -> bool:
+def ai_move(game, turn: int, depth: int, capt) -> bool:
     ''' AI move
 
     return: Number of captures
     '''
     ai = gm.AI(game, turn)
-    _, move = ai.iterativeDeepening(turn, deepth)
+    _, move = ai.iterativeDeepening(turn, depth)
     return game.makeMove(turn, move[0], move[1], capt, [])
 
 def is_draw(board: list[list[int]]) -> bool:

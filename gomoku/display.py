@@ -74,6 +74,34 @@ def mouse_click(board: list[list[int]]) -> tuple[tuple[int, int], bool]:
     return (0, 0), False
 
 
+def request_window(screen: pygame.Surface, options: list[str]) -> int:
+    ''' Prompts user to select his color once again '''
+    font = pygame.font.Font(None, 36)
+    texts = [font.render(option, True, WHITE) for option in options]
+    text_rects = [text.get_rect(center=(1050, 130 + 40 * i)) for i, text in enumerate(texts)]
+
+    while True:
+        screen.fill(BACKGROUND, (920, 100, 260, 50 * len(options)))
+        for text, text_rect in zip(texts, text_rects):
+            screen.blit(text, text_rect)
+        pygame.draw.rect(screen, GRAY, (920, 100, 260, 50 * len(options)), 2)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit(0)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                if 920 <= x <= 1180 and 100 <= y <= (100 + 50 * len(options)):
+                    if y <= 150:
+                        return 0
+                    elif y <= 200:
+                        return 1
+                    else:
+                        return 2
+        pygame.time.wait(10)
+
+
 def draw_menu(
     screen: pygame.Surface,
     turn: int,
@@ -102,8 +130,7 @@ def draw_menu(
     screen.blit(text, (850, 220))
 
     # Display player1 information
-    player1_color_ball = WHITE
-    pygame.draw.circle(screen, player1_color_ball, (1200, 330), 40)
+    pygame.draw.circle(screen, WHITE, (1200, 330), 40)
     pygame.draw.rect(screen, GRAY, (840, 265, 430, 135), 2)
     text = font.render("Player 1:", True, WHITE)
     screen.blit(text, (850, 280))
@@ -115,8 +142,7 @@ def draw_menu(
     screen.blit(text, (850, 360))
 
     # Display player2 information
-    player2_color_ball = BLACK
-    pygame.draw.circle(screen, player2_color_ball, (1200, 470), 40)
+    pygame.draw.circle(screen, BLACK, (1200, 470), 40)
     pygame.draw.rect(screen, GRAY, (840, 405, 430, 135), 2)
     text = font.render("Player 2:", True, WHITE)
     screen.blit(text, (850, 420))

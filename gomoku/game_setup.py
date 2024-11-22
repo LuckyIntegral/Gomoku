@@ -127,31 +127,31 @@ def create_start_button(screen: pygame.Surface) -> pygame.Rect:
     return button_rect
 
 
-def frames(freq: int = 10):
+def frames(freq: int = 3):
     ''' Generator for the animation of the pieces. '''
-    pieces = [[(j + i) % 2 + 1 for i in range(19)] for j in range(19)]
-    empty = [[0 for _ in range(19)] for _ in range(19)]
-    board = empty
-    total_frames = 18
-    frame = 0
-
+    board = [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
+        [0,0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0,0],
+        [0,0,0,0,2,1,1,1,1,1,1,1,1,2,2,0,0,0,0],
+        [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
+        [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
+        [0,0,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,0,0],
+        [0,0,2,1,1,1,1,1,1,1,1,1,2,2,2,2,2,0,0],
+        [0,0,2,1,1,1,1,1,1,1,1,2,2,2,2,2,2,0,0],
+        [0,0,2,1,1,1,1,1,1,2,2,2,2,2,2,2,2,0,0],
+        [0,0,2,1,1,1,1,1,2,2,1,1,2,2,2,2,2,0,0],
+        [0,0,0,2,1,1,1,2,2,2,1,1,2,2,2,2,0,0,0],
+        [0,0,0,2,2,1,1,2,2,2,2,2,2,2,2,2,0,0,0],
+        [0,0,0,0,2,1,1,1,2,2,2,2,2,2,2,0,0,0,0],
+        [0,0,0,0,0,2,2,1,1,2,2,2,2,2,0,0,0,0,0],
+        [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    ]
     while True:
-        if frame % freq == 0:
-            if frame // freq < 10:
-                spiral = 9 - frame // freq
-            else:
-                spiral = frame // freq - 9
-
-            for i in range(19):
-                for j in range(19):
-                    if i in (spiral, 18 - spiral) and spiral <= j <= 18 - spiral \
-                        or j in (spiral, 18 - spiral) and spiral <= i <= 18 - spiral:
-                        board[i][j] = pieces[i][j]
-                    else:
-                        board[i][j] = 0
         yield board
-        frame += 1
-        frame %= (total_frames * freq)
 
 
 def convert_to_text(settings: dict) -> dict:
@@ -177,7 +177,7 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
     ]
 
 
-    for board in frames(13):
+    for board in frames():
         display.draw_board(screen)
         display.draw_pieces(screen, board)
 
@@ -201,6 +201,6 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
                     return convert_to_text(settings)
 
         pygame.display.flip()
-        pygame.time.delay(10)
+        pygame.time.delay(50)
 
     return convert_to_text(settings)

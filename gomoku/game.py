@@ -75,7 +75,6 @@ class Game:
         display.draw_board(self.screen)
         display.draw_pieces(self.screen, self.game.getBoard(), self.hints)
         if self.hints_mode:
-            print(self.hints)
             for hint in self.hints:
                 display.draw_piece(self.screen, hint[0], hint[1], display.HINT)
         display.draw_menu(self.screen, self.turn, self.setup["start_rules"], self.player1, self.capt[0], self.player2, self.capt[1], self.get_time() - self.clock)

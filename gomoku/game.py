@@ -215,11 +215,40 @@ class Game:
         return display.request_window(self.screen, options)
 
 
+    def control_opening(self) -> None:
+        ''' Control the opening '''
+        def hotseat_pro(dist: int):
+            moved = 0
+            while moved < 3:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT: exit(0)
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                        move, inside = display.mouse_click(self.game.getBoard())
+                        if inside and self.game.isValidMove(self.turn, move[0], move[1]):
+                            if moved == 0:
+                                if move[0] != 9 or move[1] != 9:
+                                    continue
+                            if moved == 2:
+                                if 9-dist < move[0] < 9+dist and 9-dist < move[1] < 9+dist:
+                                    continue
+                            self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
+                            self.aftermove()
+                            moved += 1
+                pygame.time.delay(100)
+        if self.setup['start_rules'] == game_setup.OPTION_PRO:
+            hotseat_pro(3)
+        elif self.setup['start_rules'] == game_setup.OPTION_LONG_PRO:
+            hotseat_pro(4)
+
+
     def loop(self) -> int:
         ''' Main game loop '''
         self.sync_display()
         if self.setup['start_rules'] != game_setup.OPTION_STANDARD:
-            self.outplay_opening()
+            if self.setup['mode'] == game_setup.OPTION_PLAYER_VS_AI:
+                self.outplay_opening()
+            elif self.setup['mode'] == game_setup.OPTION_PLAYER_VS_PLAYER:
+                self.control_opening()
         self.sync_display()
 
         while self.game_status == STATUS_RUNNING:

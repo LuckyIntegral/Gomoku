@@ -11,7 +11,7 @@ STATUS_WIN_PLAYER1 = 1
 STATUS_WIN_PLAYER2 = 2
 STATUS_DRAW = 3
 STATUS_TERMINATED = 4
-DEPTH = 10
+DEPTH = 3
 
 
 class Game:
@@ -32,6 +32,8 @@ class Game:
         self.setup = setup
         self.clock = self.get_time()
 
+        if setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS:
+            setup["mode"] = game_setup.OPTION_PLAYER_VS_PLAYER
 
     def parse_player_setup(self, setup: dict[str, int]) -> tuple[str, str]:
         ''' Parse the player setup '''
@@ -72,6 +74,10 @@ class Game:
         ''' Sync the display with the board '''
         display.draw_board(self.screen)
         display.draw_pieces(self.screen, self.game.getBoard(), self.hints)
+        if self.hints_mode:
+            print(self.hints)
+            for hint in self.hints:
+                display.draw_piece(self.screen, hint[0], hint[1], display.HINT)
         display.draw_menu(self.screen, self.turn, self.setup["start_rules"], self.player1, self.capt[0], self.player2, self.capt[1], self.get_time() - self.clock)
         pygame.display.flip()
 
@@ -241,6 +247,13 @@ class Game:
             hotseat_pro(4)
 
 
+    def add_player_hints(self):
+        ''' Add player hints '''
+        ai = gm.AI(self.game, self.turn)
+        _, move = ai.iterativeDeepening(self.turn, DEPTH)
+        self.hints = [[move[1], move[0]]]
+
+
     def loop(self) -> int:
         ''' Main game loop '''
         self.sync_display()
@@ -250,6 +263,7 @@ class Game:
             elif self.setup['mode'] == game_setup.OPTION_PLAYER_VS_PLAYER:
                 self.control_opening()
         self.sync_display()
+        hints_mode = self.hints_mode
 
         while self.game_status == STATUS_RUNNING:
             for event in pygame.event.get():
@@ -261,9 +275,10 @@ class Game:
                         move, inside = display.mouse_click(self.game.getBoard())
                         if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            # if hints_mode:
-                            #     hints = api.player_hints(game.getBoard(), self.turn)
                             self.aftermove()
+                            if hints_mode:
+                                self.add_player_hints()
+                                self.sync_display()
 
             if self.game_status != STATUS_RUNNING:
                 break

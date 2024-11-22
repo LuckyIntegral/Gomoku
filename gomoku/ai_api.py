@@ -25,16 +25,3 @@ def is_win(board: list[list[int]], player: int) -> bool:
     # if random.randint(0, 100) == 42:
     #     return True
     return False
-
-def player_hints(board: list[list[int]], player: int) -> list[tuple[int, int]]:
-    ''' Get hints for the player
-    Returns a list of 3-5 the best moves for the player
-    '''
-    # api call here
-    hints = []
-    for _ in range(3):
-        x = random.randint(0, 18)
-        y = random.randint(0, 18)
-        if board[y][x] == 0:
-            hints.append((x, y))
-    return hints

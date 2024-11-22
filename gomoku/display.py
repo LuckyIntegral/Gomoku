@@ -79,13 +79,9 @@ def request_window(screen: pygame.Surface, options: list[str]) -> int:
     font = pygame.font.Font(None, 36)
     texts = [font.render(option, True, WHITE) for option in options]
     text_rects = [text.get_rect(center=(1050, 130 + 40 * i)) for i, text in enumerate(texts)]
-    # text1_rect = text1.get_rect(center=(1050, 130))
-    # text2_rect = text2.get_rect(center=(1050, 170))
 
     while True:
         screen.fill(BACKGROUND, (920, 100, 260, 50 * len(options)))
-        # screen.blit(text1, text1_rect)
-        # screen.blit(text2, text2_rect)
         for text, text_rect in zip(texts, text_rects):
             screen.blit(text, text_rect)
         pygame.draw.rect(screen, GRAY, (920, 100, 260, 50 * len(options)), 2)

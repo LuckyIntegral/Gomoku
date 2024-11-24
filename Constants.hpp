@@ -12,7 +12,7 @@ const int WIN_WEIGHT = 10000000;
 const int FOUR_UNCOVERED_WEIGHT = 500000;
 const int THREE_UNCOVERED_WEIGHT = 5000;
 const int TWO_UNCOVERED_WEIGHT = 20;
-const int FOUR_COVERED_WEIGHT = 2000;
+const int FOUR_COVERED_WEIGHT = 35000;
 const int THREE_COVERED_WEIGHT = 40;
 const int CAPTURE_WEIGHT = 120000;
 
@@ -33,7 +33,11 @@ const std::vector<std::vector<int>> TWO_UNCOVERED = {
 };
 
 const std::vector<std::vector<int>> FOUR_COVERED = {
-    {1, 1, 1, 1}
+    {1, 1, 1, 1, 0},
+    {1, 1, 1, 0, 1},
+    {1, 1, 0, 1, 1},
+    {1, 0, 1, 1, 1},
+    {0, 1, 1, 1, 1}
 };
 
 // const std::vector<std::vector<int>> THREE_COVERED = {
@@ -57,6 +61,10 @@ const std::map<std::vector<int>, int> PATTERNS = {
     {THREE_UNCOVERED[2], THREE_UNCOVERED_WEIGHT},
     {TWO_UNCOVERED[0], TWO_UNCOVERED_WEIGHT},
     {FOUR_COVERED[0], FOUR_COVERED_WEIGHT},
+    {FOUR_COVERED[1], FOUR_COVERED_WEIGHT},
+    {FOUR_COVERED[2], FOUR_COVERED_WEIGHT},
+    {FOUR_COVERED[3], FOUR_COVERED_WEIGHT},
+    {FOUR_COVERED[4], FOUR_COVERED_WEIGHT},
     // {FOUR_COVERED[1], FOUR_COVERED_WEIGHT},
     // {FOUR_COVERED[2], FOUR_COVERED_WEIGHT},
     // {FOUR_COVERED[3], FOUR_COVERED_WEIGHT},

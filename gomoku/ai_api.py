@@ -10,6 +10,7 @@ def ai_move(game, turn: int, depth: int, capt) -> bool:
     '''
     ai = gm.AI(game, turn)
     _, move = ai.iterativeDeepening(turn, depth)
+    print(f"AI move: {move}")
     return game.makeMove(turn, move[0], move[1], capt, [])
 
 def is_draw(board: list[list[int]]) -> bool:

@@ -19,14 +19,14 @@ std::string tupleToString(const std::tuple<Args...>& t) {
 
 AI::AI(Game& game, int player) : game(game), player(player) {}
 
-int AI::evaluateBoard() {
-    int score = 0;
-    for (const auto& [pattern, weight] : PATTERNS) {
-        score += game.countPatternOnBoard(pattern, player) * weight;
-        // score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
-    }
-    return score;
-}
+// int AI::evaluateBoard() {
+//     int score = 0;
+//     for (const auto& [pattern, weight] : PATTERNS) {
+//         score += game.countPatternOnBoard(pattern, player) * weight;
+//         // score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
+//     }
+//     return score;
+// }
 
 std::string AI::hashBoard() const {
     std::string boardHash;
@@ -47,15 +47,17 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
     //     return transpositionTable[transpositionKeyStr];
     // }
 
-    if (depth == 0 || game.isWin(player) || game.isWin(3 - player)) {
-        return {evaluateBoard(), {-1, -1}};
+    if (depth == 0) {
+        return {game.heuristicEvaluation(player, -1, -1), {-1, -1}};
     }
-
     std::pair<int, int> bestMove = {-1, -1};
     std::vector<std::pair<int, int>> moves = game.getForcedMoves(player);
     if (moves.empty()) {
         moves = game.getBestPossibleMoves(player);
     } else {
+        if (isMaximizing) {
+            return {WIN_WEIGHT * 2, moves[0]};
+        }
         return {0, moves[0]};
     }
 
@@ -64,7 +66,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
         return game.heuristicEvaluation(player, a.first, a.second) > game.heuristicEvaluation(player, b.first, b.second);
     });
 
-    //moves = std::vector<std::pair<int, int>>(moves.begin(), moves.begin() + std::min(20, (int)moves.size()));
+    moves = std::vector<std::pair<int, int>>(moves.begin(), moves.begin() + std::min(1, (int)moves.size()));
     if (isMaximizing) {
         int bestScore = -WIN_WEIGHT;
         for (const auto& move : moves) {
@@ -93,6 +95,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
             std::vector<std::pair<int, int>> capturedStones;
             game.makeMove(player, move.first, move.second, capturesCount, capturedStones);
             auto [score, _] = minimax(3 - player, depth - 1, alpha, beta, true);
+            score = -score;
             score -= game.getCaptures(player) * CAPTURE_WEIGHT;
             game.undoMove(player, move.first, move.second, capturedStones);
 
@@ -116,11 +119,11 @@ void AI::clearTranspositionTable() {
 
 std::pair<int, std::pair<int, int>> AI::iterativeDeepening(int player, int maxDepth) {
     std::pair<int, std::pair<int, int>> bestMove = {0, {-1, -1}};
-    // for (int depth = 1; depth <= maxDepth; ++depth) {
-    bestMove = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
-    //     if (bestMove.first >= WIN_WEIGHT) {
-    //         break;
-    //     }
-    // }
+    for (int depth = 1; depth <= maxDepth; ++depth) {
+        bestMove = minimax(player, maxDepth, -WIN_WEIGHT, WIN_WEIGHT, true);
+        if (bestMove.first >= WIN_WEIGHT || this->game.getCaptures(player) >= 5) {
+            break;
+        }
+    }
     return bestMove;
 }

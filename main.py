@@ -9,9 +9,7 @@ def main():
 
     setup = game_setup.prompt_game_setup(screen)
     game = gm.Game(screen, setup)
-    exit_status = game.loop()
-
-    print(f"Exit status {exit_status}")
+    game.loop()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 ''' all the display functions are here '''
 import time
 import pygame
+from . import game
 
 
 BACKGROUND = (50, 50, 50)
@@ -99,6 +100,33 @@ def request_window(screen: pygame.Surface, options: list[str]) -> int:
                         return 1
                     else:
                         return 2
+        pygame.time.wait(10)
+
+
+def display_exit_status(screen: pygame.Surface, status: int) -> None:
+    ''' Display the exit status '''
+
+    font = pygame.font.Font(None, 36)
+    text = None
+    match status:
+        case game.STATUS_WIN_PLAYER1:
+            text = font.render("  White won!", True, WHITE)
+        case game.STATUS_WIN_PLAYER2:
+            text = font.render("  Black won!", True, WHITE)
+        case game.STATUS_DRAW:
+            text = font.render("  Game over!", True, WHITE)
+        case _:
+            text = font.render("Error!", True, WHITE)
+
+    screen.fill(BACKGROUND, (560, 320, 340, 200))
+    pygame.draw.rect(screen, WHITE, (560, 320, 340, 200), 3)
+    screen.blit(text, (650, 400))
+    pygame.display.flip()
+
+    for _ in range(200):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit(0)
         pygame.time.wait(10)
 
 

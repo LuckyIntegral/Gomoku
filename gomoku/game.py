@@ -10,9 +10,8 @@ STATUS_RUNNING = 0
 STATUS_WIN_PLAYER1 = 1
 STATUS_WIN_PLAYER2 = 2
 STATUS_DRAW = 3
-STATUS_TERMINATED = 4
 DEPTH_HINTS = 3
-DEPTH = 4
+DEPTH = 3
 
 
 class Game:
@@ -284,7 +283,6 @@ class Game:
                             self.aftermove()
                             if api.is_win(self.game.getBoard(), self.turn):
                                 self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
-
             if self.game_status != STATUS_RUNNING:
                 break
 
@@ -298,4 +296,4 @@ class Game:
 
             pygame.time.delay(100)
 
-        return self.game_status
+        display.display_exit_status(self.screen, self.game_status)

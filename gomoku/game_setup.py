@@ -3,6 +3,28 @@ import sys
 import pygame
 from . import display
 
+BOARD = [
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
+    [0,0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0,0],
+    [0,0,0,0,2,1,1,1,1,1,1,1,1,2,2,0,0,0,0],
+    [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
+    [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
+    [0,0,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,0,0],
+    [0,0,2,1,1,1,1,1,1,1,1,1,2,2,2,2,2,0,0],
+    [0,0,2,1,1,1,1,1,1,1,1,2,2,2,2,2,2,0,0],
+    [0,0,2,1,1,1,1,1,1,2,2,2,2,2,2,2,2,0,0],
+    [0,0,2,1,1,1,1,1,2,2,1,1,2,2,2,2,2,0,0],
+    [0,0,0,2,1,1,1,2,2,2,1,1,2,2,2,2,0,0,0],
+    [0,0,0,2,2,1,1,2,2,2,2,2,2,2,2,2,0,0,0],
+    [0,0,0,0,2,1,1,1,2,2,2,2,2,2,2,0,0,0,0],
+    [0,0,0,0,0,2,2,1,1,2,2,2,2,2,0,0,0,0,0],
+    [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+]
+
 OPTION_PLAYER_VS_AI = "Player vs AI"
 OPTION_PLAYER_VS_PLAYER = "Player vs Player"
 OPTION_PLAYER_VS_PLAYER_HINTS = "Player vs Player with Hints"
@@ -81,14 +103,15 @@ def add_buttons(
     screen: pygame.Surface,
     options: list[str],
     position: tuple[int, int],
-    selected: int
+    selected: int,
+    length: int = len(RULES_OPTIONS)
 ) -> list[pygame.Rect]:
     ''' Draws buttons for each option and returns a list of rects for each button. '''
     BUTTON_FONT = pygame.font.Font("freesansbold.ttf", 24)
     BUTTON_FONT.italic = True
     reacts = []
 
-    for i, option in enumerate(options):
+    for i, option in enumerate(options[:length]):
         reacts.append(create_selector_button(
             screen,
             option,
@@ -127,33 +150,6 @@ def create_start_button(screen: pygame.Surface) -> pygame.Rect:
     return button_rect
 
 
-def frames(freq: int = 3):
-    ''' Generator for the animation of the pieces. '''
-    board = [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
-        [0,0,0,0,0,2,2,1,1,1,1,1,2,2,0,0,0,0,0],
-        [0,0,0,0,2,1,1,1,1,1,1,1,1,2,2,0,0,0,0],
-        [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
-        [0,0,0,2,1,1,1,2,2,1,1,1,1,2,2,2,0,0,0],
-        [0,0,2,1,1,1,1,1,1,1,1,1,1,2,2,2,2,0,0],
-        [0,0,2,1,1,1,1,1,1,1,1,1,2,2,2,2,2,0,0],
-        [0,0,2,1,1,1,1,1,1,1,1,2,2,2,2,2,2,0,0],
-        [0,0,2,1,1,1,1,1,1,2,2,2,2,2,2,2,2,0,0],
-        [0,0,2,1,1,1,1,1,2,2,1,1,2,2,2,2,2,0,0],
-        [0,0,0,2,1,1,1,2,2,2,1,1,2,2,2,2,0,0,0],
-        [0,0,0,2,2,1,1,2,2,2,2,2,2,2,2,2,0,0,0],
-        [0,0,0,0,2,1,1,1,2,2,2,2,2,2,2,0,0,0,0],
-        [0,0,0,0,0,2,2,1,1,2,2,2,2,2,0,0,0,0,0],
-        [0,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    ]
-    while True:
-        yield board
-
-
 def convert_to_text(settings: dict) -> dict:
     ''' Converts the settings to text. '''
     settings["mode"] = PLAYER_MODE_OPTIONS[settings["mode"]]
@@ -177,24 +173,25 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
     ]
 
 
-    for board in frames():
+    while True:
         display.draw_board(screen)
-        display.draw_pieces(screen, board)
+        display.draw_pieces(screen, BOARD)
 
         for text, rect in STATIC_MENU_TEXT:
             screen.blit(text, rect)
 
         mode_reacts = add_buttons(screen, PLAYER_MODE_OPTIONS, (MENU_X_POS, 140), settings["mode"])
         color_reacts = add_buttons(screen, PLAYER_COLOR_OPTIONS, (MENU_X_POS, 340), settings["color"])
-        rules_reacts = add_buttons(screen, RULES_OPTIONS, (MENU_X_POS, 540), settings["start_rules"])
+        rules_reacts = add_buttons(screen, RULES_OPTIONS, (MENU_X_POS, 540), settings["start_rules"], 1 if settings["mode"] == 2 else len(RULES_OPTIONS))
         start_rect = create_start_button(screen)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
                 x, y = pygame.mouse.get_pos()
                 settings["mode"] = listen_clicks(mode_reacts, x, y, settings["mode"])
+                if settings["mode"] == 2:
+                    settings["start_rules"] = 0
                 settings["color"] = listen_clicks(color_reacts, x, y, settings["color"])
                 settings["start_rules"] = listen_clicks(rules_reacts, x, y, settings["start_rules"])
                 if start_rect.collidepoint(x, y):
@@ -202,5 +199,3 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
 
         pygame.display.flip()
         pygame.time.delay(50)
-
-    return convert_to_text(settings)

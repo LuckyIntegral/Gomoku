@@ -122,7 +122,7 @@ int Game::evaluateBoard(int player) const {
     int score = 0;
     for (const auto& [pattern, weight] : PATTERNS) {
         score += countPatternOnBoard(pattern, player) * weight;
-        score -= countPatternOnBoard(pattern, 3 - player) * weight;
+       //score -= countPatternOnBoard(pattern, 3 - player) * weight;
     }
     // if (score < FOUR_UNCOVERED_WEIGHT && score > FOUR_COVERED_WEIGHT * 2) {
     //     score = THREE_UNCOVERED_WEIGHT * 10;
@@ -377,17 +377,20 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
     std::vector<std::pair<int, int>> importantMoves;
     std::vector<std::pair<int, int>> capturedStones;
     int captureCount = 0;
-    int maxScore = 0;
     bool isBreakingWin = false;
         // Check if placing a stone here blocks an opponent's winning move
     auto moves = getBestPossibleMoves(3 - player);
+    auto prevScore = evaluateBoard(3 - player);
+    prevScore += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
+    auto maxScore = prevScore;
     for (auto move : moves)
     {
         makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
         auto score = evaluateBoard(3 - player);
         score += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
+        maxScore = std::max(maxScore, score);
         std::cout << "Opponent Score: " << score << std::endl;
-        if (score >= FOUR_UNCOVERED_WEIGHT) {
+        if (score - prevScore >= FOUR_UNCOVERED_WEIGHT) {
             // check if there is a chance to capture the opponent's winning move
             undoMove(3 - player, move.first, move.second, capturedStones);
             capturedStones.clear();
@@ -399,21 +402,15 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
                 forcedMoves.insert(forcedMoves.begin(), breakingWinCaptures.begin(), breakingWinCaptures.end());
                 isBreakingWin = true;
             } else if (!isBreakingWin) {
-                if (score > maxScore) {
+                if (score >= maxScore) {
                     maxScore = score;
                     forcedMoves.clear();
                     forcedMoves.push_back({move.first, move.second});
                 }
             }
         }
-        else if (score >= CAPTURE_WEIGHT) {
-            importantMoves.push_back({move.first, move.second});
-        }
         undoMove(3 - player, move.first, move.second, capturedStones);
         capturedStones.clear();
-    }
-    for (auto item : importantMoves) {
-        forcedMoves.push_back(item);
     }
     moves = getBestPossibleMoves(player);
     // Check if placing a stone here continues a sequence that leads to a win
@@ -422,7 +419,7 @@ std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
         makeMove(player, move.first, move.second, captureCount, capturedStones);
         auto score = evaluateBoard(player);
         score += this->getCaptures(player) * CAPTURE_WEIGHT;
-        if (score >= WIN_WEIGHT / 2 || this->getCaptures(player) >= 5) {
+        if ((score >= maxScore && score >= WIN_WEIGHT) || this->getCaptures(player) >= 5) {
             std::vector<std::pair<int, int>> result = {{move.first, move.second}};
             undoMove(player, move.first, move.second, capturedStones);
             return result;
@@ -441,9 +438,12 @@ std::vector<std::pair<int, int>> Game::getBreakingWinCaptures(const std::vector<
     std::vector<std::pair<int, int>> breakingWinCaptures;
     std::vector<std::pair<int, int>> capturedStones;
     int captureCount = 0;
+    auto prevScore = evaluateBoard(3 - player);
     for (auto move : moves)
     {
-        auto prevScore = evaluateBoard(3 - player);
+        if (prevScore >= FOUR_UNCOVERED_WEIGHT) {
+            break;
+        }
         makeMove(player, move.first, move.second, captureCount, capturedStones);
         auto score = evaluateBoard(3 - player);
         //score -= (captureCount - 1) * CAPTURE_WEIGHT;
@@ -452,7 +452,7 @@ std::vector<std::pair<int, int>> Game::getBreakingWinCaptures(const std::vector<
             undoMove(player, move.first, move.second, capturedStones);
             continue;
         }
-        if (prevScore - score >= FOUR_UNCOVERED_WEIGHT) {
+        if (prevScore - score >= THREE_UNCOVERED_WEIGHT) {
             breakingWinCaptures.push_back({move.first, move.second});
         }
         undoMove(player, move.first, move.second, capturedStones);

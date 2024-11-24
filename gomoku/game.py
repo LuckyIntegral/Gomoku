@@ -13,6 +13,10 @@ STATUS_DRAW = 3
 DEPTH_HINTS = 3
 DEPTH = 3
 
+TURNS_TO_DISPLAY = [
+    "Player 1's turn",
+    "Player 2's turn",
+]
 
 class Game:
     ''' Main game class '''
@@ -70,25 +74,25 @@ class Game:
             self.game_status = STATUS_RUNNING
 
 
-    def sync_display(self) -> None:
+    def sync_display(self, turn_to_display: str) -> None:
         ''' Sync the display with the board '''
         display.draw_board(self.screen)
         display.draw_pieces(self.screen, self.game.getBoard(), self.hints)
         if self.hints_mode:
             for hint in self.hints:
                 display.draw_piece(self.screen, hint[0], hint[1], display.HINT)
-        display.draw_menu(self.screen, self.turn, self.setup["start_rules"], self.player1, self.capt[0], self.player2, self.capt[1], self.get_time() - self.clock)
+        display.draw_menu(self.screen, turn_to_display, self.setup["start_rules"], self.player1, self.capt[0], self.player2, self.capt[1], self.get_time() - self.clock)
         pygame.display.flip()
 
 
-    def aftermove(self):
+    def aftermove(self, turn_to_display: str) -> None:
         ''' After move '''
         if self.hints_mode:
             self.hints = []
         self.capt[self.turn - 1] = self.game.getCaptures(self.turn)
         self.swtich_move()
         self.refresh_status()
-        self.sync_display()
+        self.sync_display(turn_to_display)
         self.clock = self.get_time()
         if self.hints_mode:
             self.add_player_hints()
@@ -115,7 +119,7 @@ class Game:
             self.game.makeMove(self.turn, 8, 8, self.capt[self.turn - 1], [])
             self.swtich_move()
             self.game.makeMove(self.turn, 9, 10, self.capt[self.turn - 1], [])
-            self.aftermove()
+            self.aftermove(TURNS_TO_DISPLAY[1])
             if swap2:
                 option = self.request_window(["Start White", "Continue Black", "Continue swap"])
             else:
@@ -123,9 +127,9 @@ class Game:
 
             if option == 0:
                 api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
-                self.aftermove()
+                self.aftermove(TURNS_TO_DISPLAY[0])
             elif option == 2:
-                self.sync_display()
+                self.sync_display(TURNS_TO_DISPLAY[1])
                 moved = 0
 
                 while moved < 2:
@@ -136,7 +140,7 @@ class Game:
                             if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                                 self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
                                 moved += 1
-                                self.aftermove()
+                                self.aftermove(TURNS_TO_DISPLAY[1])
                     pygame.time.delay(100)
             if option != 1:
                 self.player1 = "Player"
@@ -152,7 +156,7 @@ class Game:
                         if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
                             moved += 1
-                            self.aftermove()
+                            self.aftermove(TURNS_TO_DISPLAY[0])
                 pygame.time.delay(100)
 
             if self.first_stronger():
@@ -163,7 +167,7 @@ class Game:
     def outplay_pro_opening(self, dist: int) -> None:
         if self.player1 == "AI":
             self.game.makeMove(self.turn, 9, 9, self.capt[self.turn - 1], [])
-            self.aftermove()
+            self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
             move = (-1, -1)
 
             while move[0] == -1:
@@ -173,7 +177,7 @@ class Game:
                         move, inside = display.mouse_click(self.game.getBoard())
                         if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            self.aftermove()
+                            self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
                 pygame.time.delay(100)
 
             if move[0] <= 9 and self.game.getBoard()[9-dist][9] == 0:
@@ -193,7 +197,7 @@ class Game:
             self.game.makeMove(self.turn, 9, 9, self.capt[self.turn - 1], [])
             self.swtich_move()
             api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
-            self.aftermove()
+            self.aftermove(TURNS_TO_DISPLAY[0])
             moved = False
 
             while not moved:
@@ -205,7 +209,7 @@ class Game:
                             if 9-dist < move[0] < 9+dist and 9-dist < move[1] < 9+dist:
                                 continue
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            self.aftermove()
+                            self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
                             moved = True
                 pygame.time.delay(100)
 
@@ -244,13 +248,43 @@ class Game:
                                 if 9-dist < move[0] < 9+dist and 9-dist < move[1] < 9+dist:
                                     continue
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            self.aftermove()
+                            self.aftermove(TURNS_TO_DISPLAY[self.turn - 1])
                             moved += 1
                 pygame.time.delay(100)
+
+        def swap(swap2: bool = False):
+            def request_moves(n: int, player: str):
+                moved = 0
+                while moved < n:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT: exit(0)
+                        if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+                            move, inside = display.mouse_click(self.game.getBoard())
+                            if inside and self.game.isValidMove(self.turn, move[0], move[1]):
+                                self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
+                                self.aftermove(player)
+                                moved += 1
+                    pygame.time.delay(100)
+
+            request_moves(3, TURNS_TO_DISPLAY[0])
+            if swap2:
+                option = self.request_window(["Start White", "Continue Black", "Continue swap"])
+            else:
+                option = self.request_window(["Start White", "Continue Black"])
+            self.sync_display(TURNS_TO_DISPLAY[1])
+            if option == 2:
+                request_moves(2, TURNS_TO_DISPLAY[1])
+                self.request_window(["Start White", "Continue Black"])
+            # lol, we ignore all the options and just play the game
+
         if self.setup['start_rules'] == game_setup.OPTION_PRO:
             hotseat_pro(3)
         elif self.setup['start_rules'] == game_setup.OPTION_LONG_PRO:
             hotseat_pro(4)
+        elif self.setup['start_rules'] == game_setup.OPTION_SWAP:
+            swap()
+        elif self.setup['start_rules'] == game_setup.OPTION_SWAP2:
+            swap(swap2=True)
 
 
     def add_player_hints(self):
@@ -262,13 +296,13 @@ class Game:
 
     def loop(self) -> int:
         ''' Main game loop '''
-        self.sync_display()
+        self.sync_display(TURNS_TO_DISPLAY[self.turn - 1])
         if self.setup['start_rules'] != game_setup.OPTION_STANDARD:
             if self.setup['mode'] == game_setup.OPTION_PLAYER_VS_AI:
                 self.outplay_opening()
             elif self.setup['mode'] == game_setup.OPTION_PLAYER_VS_PLAYER:
                 self.control_opening()
-        self.sync_display()
+        self.sync_display(TURNS_TO_DISPLAY[self.turn - 1])
 
         while self.game_status == STATUS_RUNNING:
             for event in pygame.event.get():
@@ -280,7 +314,7 @@ class Game:
                         move, inside = display.mouse_click(self.game.getBoard())
                         if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            self.aftermove()
+                            self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
                             if api.is_win(self.game.getBoard(), self.turn):
                                 self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
             if self.game_status != STATUS_RUNNING:
@@ -289,7 +323,7 @@ class Game:
             # AI moves
             if (self.turn == 1 and self.player1 == "AI") or (self.turn == 2 and self.player2 == "AI"):
                 api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
-                self.aftermove()
+                self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
                 if api.is_win(self.game.getBoard(), self.turn):
                     self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
 

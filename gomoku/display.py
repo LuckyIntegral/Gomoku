@@ -132,7 +132,7 @@ def display_exit_status(screen: pygame.Surface, status: int) -> None:
 
 def draw_menu(
     screen: pygame.Surface,
-    turn: int,
+    turn: str,
     start_rule: str,
     player1_name: str,
     player1_captured: int,
@@ -154,7 +154,7 @@ def draw_menu(
     screen.blit(text, (990, 33))
 
     # Display the current turn
-    text = font.render(f"Player {turn}'s turn", True, WHITE)
+    text = font.render(turn, True, WHITE)
     screen.blit(text, (850, 220))
 
     # Display player1 information

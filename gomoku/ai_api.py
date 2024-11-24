@@ -31,10 +31,10 @@ def is_win(board: list[list[int]], player: int) -> bool:
                         continue
                     if col + 4 * d[1] < 0 or col + 4 * d[1] >= 19:
                         continue
-                    if board[row + 4 * d[0]][col + 4 * d[1]] != player:
-                        return False
-                    for i in range(1, 4):
+                    for i in range(1, 5):
                         if board[row + i * d[0]][col + i * d[1]] != player:
+                            if i == 5:
+                                print(f"Player {player} wins!")
                             break
                     else:
                         return True

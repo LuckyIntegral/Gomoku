@@ -1,6 +1,5 @@
 ''' Game API '''
 import game_module as gm
-import random
 
 
 def ai_move(game, turn: int, depth: int, capt) -> bool:
@@ -20,8 +19,22 @@ def is_draw(board: list[list[int]]) -> bool:
     return not any(0 in row for row in board)
 
 def is_win(board: list[list[int]], player: int) -> bool:
-    ''' check if the player has won '''
-    # api call here
-    # if random.randint(0, 100) == 42:
-    #     return True
+    ''' checks if the player has won the game '''
+    directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+
+    for row in range(19):
+        for col in range(19):
+            if board[row][col] == player:
+                for d in directions:
+                    if row + 4 * d[0] >= 19:
+                        continue
+                    if col + 4 * d[1] < 0 or col + 4 * d[1] >= 19:
+                        continue
+                    if board[row + 4 * d[0]][col + 4 * d[1]] != player:
+                        return False
+                    for i in range(1, 4):
+                        if board[row + i * d[0]][col + i * d[1]] != player:
+                            break
+                    else:
+                        return True
     return False

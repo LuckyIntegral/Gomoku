@@ -11,6 +11,7 @@ STATUS_WIN_PLAYER1 = 1
 STATUS_WIN_PLAYER2 = 2
 STATUS_DRAW = 3
 STATUS_TERMINATED = 4
+DEPTH_HINTS = 3
 DEPTH = 3
 
 
@@ -60,9 +61,9 @@ class Game:
 
     def refresh_status(self) -> None:
         ''' Refresh the game status '''
-        if api.is_win(self.game.getBoard(), 1):
+        if self.game.getCaptures(1) >= 5:
             self.game_status = STATUS_WIN_PLAYER1
-        elif api.is_win(self.game.getBoard(), 2):
+        elif self.game.getCaptures(2) >= 5:
             self.game_status = STATUS_WIN_PLAYER2
         elif api.is_draw(self.game.getBoard()):
             self.game_status = STATUS_DRAW
@@ -83,11 +84,18 @@ class Game:
 
     def aftermove(self):
         ''' After move '''
+        if self.hints_mode:
+            self.hints = []
+        self.capt[self.turn - 1] = self.game.getCaptures(self.turn)
         self.swtich_move()
         self.refresh_status()
         self.sync_display()
-        self.capt[self.turn - 1] = self.game.getCaptures(self.turn)
         self.clock = self.get_time()
+        if self.hints_mode:
+            self.add_player_hints()
+            display.draw_pieces(self.screen, self.game.getBoard(), self.hints)
+            pygame.display.flip()
+
 
 
     def first_stronger(self) -> bool:
@@ -249,7 +257,7 @@ class Game:
     def add_player_hints(self):
         ''' Add player hints '''
         ai = gm.AI(self.game, self.turn)
-        _, move = ai.iterativeDeepening(self.turn, DEPTH)
+        _, move = ai.iterativeDeepening(self.turn, DEPTH_HINTS)
         self.hints = [[move[1], move[0]]]
 
 
@@ -262,7 +270,6 @@ class Game:
             elif self.setup['mode'] == game_setup.OPTION_PLAYER_VS_PLAYER:
                 self.control_opening()
         self.sync_display()
-        hints_mode = self.hints_mode
 
         while self.game_status == STATUS_RUNNING:
             for event in pygame.event.get():
@@ -275,9 +282,8 @@ class Game:
                         if inside and self.game.isValidMove(self.turn, move[0], move[1]):
                             self.game.makeMove(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
                             self.aftermove()
-                            if hints_mode:
-                                self.add_player_hints()
-                                self.sync_display()
+                            if api.is_win(self.game.getBoard(), self.turn):
+                                self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
 
             if self.game_status != STATUS_RUNNING:
                 break
@@ -286,6 +292,9 @@ class Game:
             if (self.turn == 1 and self.player1 == "AI") or (self.turn == 2 and self.player2 == "AI"):
                 api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
                 self.aftermove()
+                if api.is_win(self.game.getBoard(), self.turn):
+                    self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
+
 
             pygame.time.delay(100)
 

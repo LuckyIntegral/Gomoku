@@ -110,7 +110,7 @@ def draw_menu(
     player1_captured: int,
     player2_name: str,
     player2_captured: int,
-    total_time: int
+    total_time: int,
 ) -> None:
     ''' Draw the menu '''
 

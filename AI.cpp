@@ -19,15 +19,6 @@ std::string tupleToString(const std::tuple<Args...>& t) {
 
 AI::AI(Game& game, int player) : game(game), player(player) {}
 
-// int AI::evaluateBoard() {
-//     int score = 0;
-//     for (const auto& [pattern, weight] : PATTERNS) {
-//         score += game.countPatternOnBoard(pattern, player) * weight;
-//         // score -= game.countPatternOnBoard(pattern, 3 - player) * weight;
-//     }
-//     return score;
-// }
-
 std::string AI::hashBoard() const {
     std::string boardHash;
     for (const auto& row : game.getBoard()) {
@@ -51,15 +42,7 @@ std::pair<int, std::pair<int, int>> AI::minimax(int player, int depth, int alpha
         return {game.heuristicEvaluation(player, -1, -1), {-1, -1}};
     }
     std::pair<int, int> bestMove = {-1, -1};
-    std::vector<std::pair<int, int>> moves = game.getForcedMoves(player);
-    if (moves.empty()) {
-        moves = game.getBestPossibleMoves(player);
-    } else {
-        if (isMaximizing) {
-            return {WIN_WEIGHT * 2, moves[0]};
-        }
-        return {0, moves[0]};
-    }
+    auto moves = game.getBestPossibleMoves(player);
 
     // Move ordering: prioritize moves based on a heuristic
     std::sort(moves.begin(), moves.end(), [&](const std::pair<int, int>& a, const std::pair<int, int>& b) {

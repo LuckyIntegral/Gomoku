@@ -365,62 +365,6 @@ int Game::countPatternOnBoard(const std::vector<int>& pattern, int player) const
     return count;
 }
 
-std::vector<std::pair<int, int>> Game::getForcedMoves(int player) {
-    std::vector<std::pair<int, int>> forcedMoves;
-    std::vector<std::pair<int, int>> importantMoves;
-    std::vector<std::pair<int, int>> capturedStones;
-    int captureCount = 0;
-        // Check if placing a stone here blocks an opponent's winning move
-    auto moves = getBestPossibleMoves(3 - player);
-    sort(moves.begin(), moves.end(), [&](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-        return heuristicEvaluation(3 - player, a.first, a.second) > heuristicEvaluation(3 - player, b.first, b.second);
-    });
-    moves = std::vector<std::pair<int, int>>(moves.begin(), moves.begin() + std::min(1, (int)moves.size()));
-    auto prevScore = evaluateBoard(3 - player);
-    prevScore += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
-    for (auto move : moves)
-    {
-        makeMove(3 - player, move.first, move.second, captureCount, capturedStones);
-        auto score = evaluateBoard(3 - player);
-        score += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
-        if (score - prevScore >= FOUR_UNCOVERED_WEIGHT) {
-            // check if there is a chance to capture the opponent's winning move
-            undoMove(3 - player, move.first, move.second, capturedStones);
-            capturedStones.clear();
-            // getting the best possible move for the player
-            auto playerMoves = getBestPossibleMoves(player);
-            int biggestDiff = -WIN_WEIGHT;
-            sort(playerMoves.begin(), playerMoves.end(), [&](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-                return heuristicEvaluation(player, a.first, a.second) > heuristicEvaluation(player, b.first, b.second);
-            });
-            playerMoves = std::vector<std::pair<int, int>>(playerMoves.begin(), playerMoves.begin() + std::min(1, (int)playerMoves.size()));
-            for (auto playerMove : playerMoves)
-            {
-                makeMove(player, playerMove.first, playerMove.second, captureCount, capturedStones);
-                auto playerScore = evaluateBoard(player);
-                playerScore += this->getCaptures(player) * CAPTURE_WEIGHT;
-                if (playerScore >= WIN_WEIGHT || this->getCaptures(player) >= 5) {
-                    undoMove(player, playerMove.first, playerMove.second, capturedStones);
-                    forcedMoves.clear();
-                    forcedMoves.push_back({playerMove.first, playerMove.second});
-                    return forcedMoves;
-                }
-                auto opponentScore = evaluateBoard(3 - player);
-                if (prevScore - opponentScore >= FOUR_UNCOVERED_WEIGHT && playerScore - opponentScore > biggestDiff) {
-                    biggestDiff = playerScore - opponentScore;
-                    forcedMoves.clear();
-                    forcedMoves.push_back({playerMove.first, playerMove.second});
-                }
-                undoMove(player, playerMove.first, playerMove.second, capturedStones);
-                capturedStones.clear();
-            }
-        }
-        undoMove(3 - player, move.first, move.second, capturedStones);
-        capturedStones.clear();
-    }
-    return forcedMoves;
-}
-
 int Game::getCaptures(int player) const {
     if (player == PLAYER1) {
         return this->player1Capture;

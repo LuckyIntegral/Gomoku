@@ -19,5 +19,7 @@ PYBIND11_MODULE(game_module, m) {
 
     py::class_<AI>(m, "AI")
         .def(py::init<Game&, int>())
-        .def("iterativeDeepening", &AI::iterativeDeepening);
+        .def("getBestMove", &AI::getBestMove)
+        .def("startBackgroundCalculation", &AI::startBackgroundCalculation)
+        .def("stopBackgroundCalculation", &AI::stopBackgroundCalculation);
 }

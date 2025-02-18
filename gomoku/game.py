@@ -322,8 +322,12 @@ class Game:
 
             # AI moves
             if (self.turn == 1 and self.player1 == "AI") or (self.turn == 2 and self.player2 == "AI"):
+                # STOP CALCULATION
+                api.stop_calculation()
+                # GET BEST MOVE
                 api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
                 self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
+                # START CALCULATION
                 if api.is_win(self.game.getBoard(), self.turn):
                     self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
 

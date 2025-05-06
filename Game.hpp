@@ -1,45 +1,38 @@
 #pragma once
 
-#include <array>
 #include <vector>
 #include <set>
 #include <utility>
+#include <map>
+#include <cstddef>
 #include "Constants.hpp"
 
 class Game {
     private:
-        std::array<std::array<int, 19>, 19> board;
-        std::set<std::pair<int, int>> occupiedPositions;
+        int board[BOARD_SIZE][BOARD_SIZE];
+        std::set<std::pair<int, int> > occupiedPositions;
         int player1Capture;
         int player2Capture;
 
         bool isCapture(int player, int row, int col) const;
-        std::pair<int, std::set<std::pair<int, int>>> countAndRemoveCaptures(int player, int row, int col);
-        std::pair<int, std::set<std::pair<int, int>>> countCaptures(int player, int row, int col) const;
-        bool checkPatternHorizontal(const std::vector<int>& pattern, int row, int col) const;
-        bool checkPatternVertical(const std::vector<int>& pattern, int row, int col) const;
-        bool checkPatternRightDiagonal(const std::vector<int>& pattern, int row, int col) const;
-        bool checkPatternLeftDiagonal(const std::vector<int>& pattern, int row, int col) const;
-
-        bool isLeftHorizontalCapture(int player, int row, int col) const;
-        bool isRightHorizontalCapture(int player, int row, int col) const;
-        bool isUpVerticalCapture(int player, int row, int col) const;
-        bool isDownVerticalCapture(int player, int row, int col) const;
-        bool isLeftUpDiagonalCapture(int player, int row, int col) const;
-        bool isRightUpDiagonalCapture(int player, int row, int col) const;
-        bool isLeftDownDiagonalCapture(int player, int row, int col) const;
-        bool isRightDownDiagonalCapture(int player, int row, int col) const;
+        std::pair<int, std::set<std::pair<int, int> > > countAndRemoveCaptures(int player, int row, int col);
+        int countPatternOnBoard(const std::vector<int>& pattern, int player) const;
+        int countPatternInDirection(const std::vector<int>& pattern, int row, int col, int dr, int dc) const;
+        bool isCaptureInDirection(int player, int row, int col, int dr, int dc) const;
 
     public:
         Game();
-        std::array<std::array<int, 19>, 19> getBoard() const;
-        bool makeMove(int player, int row, int col, int& capturesCount, std::vector<std::pair<int, int>>& capturedStones);
-        void undoMove(int player, int row, int col, const std::vector<std::pair<int, int>>& capturedStones);
-        int evaluateBoard(int player) const;
-        std::vector<std::pair<int, int>> getBestPossibleMoves(int player);
-        bool isValidMove(int player, int row, int col);
-        int heuristicEvaluation(int player, int row, int col);
-        int countPatternOnBoard(const std::vector<int>& pattern, int player) const;
-        int getCaptures(int player) const;
-        bool isWin(int player) const;
+        std::vector<std::vector<int> > get_board() const;
+        bool make_move(int player, int row, int col,
+                       int& capturesCount,
+                       std::vector<std::pair<int,int> >& capturedStones);
+        void undo_move(int player, int row, int col,
+                       const std::vector<std::pair<int,int> >& capturedStones);
+        int evaluate_board(int player) const;
+        std::vector<std::pair<int,int> > get_best_possible_moves(int player);
+        bool is_valid_move(int player, int row, int col);
+        int heuristic_evaluation(int player, int row, int col);
+        int get_captures(int player) const;
+        bool is_win(int player) const;
+        static const std::vector<std::pair<int,int> >& getDirections();
 };

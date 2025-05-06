@@ -18,7 +18,7 @@ re		:
 
 run		:
 	make all
-	python3 main.py
+	ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD=$(shell $(CXX) -print-file-name=libasan.so) python3 main.py
 
 init	:
 	pip install -r requirements.txt

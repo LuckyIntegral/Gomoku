@@ -1,374 +1,249 @@
 #include "Game.hpp"
-#include <algorithm>
-#include <numeric>
-#include <iostream>
-#include <vector>
-#include "Constants.hpp"
 
-Game::Game() {
-    this->player1Capture = 0;
-    this->player2Capture = 0;
-    for (auto& row : board) {
-        row.fill(EMPTY);
+Game::Game() : player1Capture(0), player2Capture(0) {
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            board[i][j] = EMPTY;
+        }
     }
 }
 
-std::array<std::array<int, 19>, 19> Game::getBoard() const {
-    return board;
+std::vector<std::vector<int> > Game::get_board() const {
+    std::vector<std::vector<int> > vecBoard(BOARD_SIZE, std::vector<int>(BOARD_SIZE, 0));
+    int i, j;
+    for (i = 0; i < BOARD_SIZE; ++i) {
+        for (j = 0; j < BOARD_SIZE; ++j) {
+            vecBoard[i][j] = board[i][j];
+        }
+    }
+    return vecBoard;
 }
 
-bool Game::isWin(int player) const {
-    if (player == PLAYER1 && this->player1Capture >= 5) {
-        return true;
-    } else if (player == PLAYER2 && this->player2Capture >= 5) {
-        return true;
-    }
-
-    if (countPatternOnBoard(WIN, player) > 0) {
+bool Game::is_win(int player) const {
+    if ((player == PLAYER1 && player1Capture >= 5) ||
+        (player == PLAYER2 && player2Capture >= 5) ||
+        (countPatternOnBoard(WIN, player) > 0)) {
         return true;
     }
     return false;
 }
 
-bool Game::isLeftHorizontalCapture(int player, int row, int col) const {
-    if (col < 3) return false;
-    return (board[row][col - 1] == 3 - player &&
-            board[row][col - 2] == 3 - player &&
-            board[row][col - 3] == player);
-}
+bool Game::isCaptureInDirection(int player, int row, int col, int dr, int dc) const {
+    int opponentPlayer = opponent(player);
+    int pos1Row = row + dr, pos1Col = col + dc;
+    int pos2Row = row + 2 * dr, pos2Col = col + 2 * dc;
+    int pos3Row = row + 3 * dr, pos3Col = col + 3 * dc;
 
-bool Game::isRightHorizontalCapture(int player, int row, int col) const {
-    if (col > 15) return false;
-    return (board[row][col + 1] == 3 - player &&
-            board[row][col + 2] == 3 - player &&
-            board[row][col + 3] == player);
-}
-
-bool Game::isUpVerticalCapture(int player, int row, int col) const {
-    if (row < 3) return false;
-    return (board[row - 1][col] == 3 - player &&
-            board[row - 2][col] == 3 - player &&
-            board[row - 3][col] == player);
-}
-
-bool Game::isDownVerticalCapture(int player, int row, int col) const {
-    if (row > 15) return false;
-    return (board[row + 1][col] == 3 - player &&
-            board[row + 2][col] == 3 - player &&
-            board[row + 3][col] == player);
-}
-
-bool Game::isLeftUpDiagonalCapture(int player, int row, int col) const {
-    if (row < 3 || col < 3) return false;
-    return (board[row - 1][col - 1] == 3 - player &&
-            board[row - 2][col - 2] == 3 - player &&
-            board[row - 3][col - 3] == player);
-}
-
-bool Game::isRightUpDiagonalCapture(int player, int row, int col) const {
-    if (row < 3 || col > 15) return false;
-    return (board[row - 1][col + 1] == 3 - player &&
-            board[row - 2][col + 2] == 3 - player &&
-            board[row - 3][col + 3] == player);
-}
-
-bool Game::isLeftDownDiagonalCapture(int player, int row, int col) const {
-    if (row > 15 || col < 3) return false;
-    return (board[row + 1][col - 1] == 3 - player &&
-            board[row + 2][col - 2] == 3 - player &&
-            board[row + 3][col - 3] == player);
-}
-
-bool Game::isRightDownDiagonalCapture(int player, int row, int col) const {
-    if (row > 15 || col > 15) return false;
-    return (board[row + 1][col + 1] == 3 - player &&
-            board[row + 2][col + 2] == 3 - player &&
-            board[row + 3][col + 3] == player);
-}
-
-bool Game::makeMove(int player, int row, int col, int& capturesCount, std::vector<std::pair<int, int>>& capturedStones) {
-    auto [count, stones] = countAndRemoveCaptures(player, row, col);
-    capturesCount = count;
-    capturedStones = std::vector<std::pair<int, int>>(stones.begin(), stones.end());
-    board[row][col] = player;
-    occupiedPositions.insert({row, col});
-    for (const auto& stone : capturedStones) {
-        occupiedPositions.erase(stone);
+    if ((pos1Row < 0 || pos1Row >= BOARD_SIZE) || (pos1Col < 0 || pos1Col >= BOARD_SIZE) ||
+        (pos2Row < 0 || pos2Row >= BOARD_SIZE) || (pos2Col < 0 || pos2Col >= BOARD_SIZE) ||
+        (pos3Row < 0 || pos3Row >= BOARD_SIZE) || (pos3Col < 0 || pos3Col >= BOARD_SIZE)) {
+        return false;
     }
+
+    return (board[pos1Row][pos1Col] == opponentPlayer &&
+            board[pos2Row][pos2Col] == opponentPlayer &&
+            board[pos3Row][pos3Col] == player);
+}
+
+bool Game::make_move(int player, int row, int col, int& capturesCount, std::vector<std::pair<int, int> >& capturedStones) {
+    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) {
+        return false;
+    }
+    
+    std::pair<int, std::set<std::pair<int, int> > > tmp = countAndRemoveCaptures(player, row, col);
+    capturesCount = tmp.first;
+    capturedStones.assign(tmp.second.begin(), tmp.second.end());
+    
+    board[row][col] = player;
+    for (std::vector<std::pair<int, int> >::const_iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
+        occupiedPositions.erase(*it);
+    }
+
+    occupiedPositions.insert(std::make_pair(row, col));
+    
     if (player == PLAYER1) {
         player1Capture += capturesCount;
     } else {
         player2Capture += capturesCount;
     }
+    
     return true;
 }
 
-void Game::undoMove(int player, int row, int col, const std::vector<std::pair<int, int>>& capturedStones) {
+void Game::undo_move(int player, int row, int col, const std::vector<std::pair<int, int> >& capturedStones) {
     board[row][col] = EMPTY;
-    for (const auto& stone : capturedStones) {
-        board[stone.first][stone.second] = 3 - player;
+
+    for (std::vector<std::pair<int, int> >::const_iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
+        board[it->first][it->second] = opponent(player);
     }
-    if (player == PLAYER1) {
-        player1Capture -= capturedStones.size() / 2;
-    } else {
-        player2Capture -= capturedStones.size() / 2;
-    }
-    occupiedPositions.erase({row, col});
-    for (const auto& stone : capturedStones) {
-        occupiedPositions.insert(stone);
+
+    int removedCaptures = capturedStones.size() / 2;
+    if (player == PLAYER1)
+        player1Capture -= removedCaptures;
+    else
+        player2Capture -= removedCaptures;
+
+    occupiedPositions.erase(std::make_pair(row, col));
+    for (std::vector<std::pair<int, int> >::const_iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
+        occupiedPositions.insert(*it);
     }
 }
 
-int Game::evaluateBoard(int player) const {
+int Game::evaluate_board(int player) const {
     int score = 0;
-    for (const auto& [pattern, weight] : PATTERNS) {
-        score += countPatternOnBoard(pattern, player) * weight;
-        score -= countPatternOnBoard(pattern, 3 - player) * weight;
+
+    std::map<std::vector<int>, int>::const_iterator it;
+    for(it = PATTERNS.begin(); it != PATTERNS.end(); ++it) {
+        score += countPatternOnBoard(it->first, player) * it->second;
     }
-    // if (score < FOUR_UNCOVERED_WEIGHT && score > FOUR_COVERED_WEIGHT * 2) {
-    //     score = THREE_UNCOVERED_WEIGHT * 10;
-    // }
     return score;
 }
 
-std::vector<std::pair<int, int>> Game::getBestPossibleMoves(int player) {
-    std::set<std::pair<int, int>> moves;
-    std::vector<std::pair<int, int>> directions = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-
-    for (const auto& pos : occupiedPositions) {
-        int row = pos.first;
-        int col = pos.second;
-        for (const auto& [dr, dc] : directions) {
-            int nr = row + dr, nc = col + dc;
-            if (nr >= 0 && nr < 19 && nc >= 0 && nc < 19 && board[nr][nc] == EMPTY) {
-                moves.insert({nr, nc});
+std::vector<std::pair<int, int> > Game::get_best_possible_moves(int /*player*/) {
+    std::set<std::pair<int, int> > moves;
+    const std::vector<std::pair<int, int> >& directions = Game::getDirections();
+    
+    for (std::set<std::pair<int, int> >::const_iterator pos = occupiedPositions.begin(); pos != occupiedPositions.end(); ++pos) {
+        int row = pos->first;
+        int col = pos->second;
+        for (std::vector<std::pair<int, int> >::const_iterator d = directions.begin(); d != directions.end(); ++d) {
+            int nr = row + d->first;
+            int nc = col + d->second;
+            if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE &&
+                board[nr][nc] == EMPTY) {
+                moves.insert(std::make_pair(nr, nc));
             }
         }
     }
-
+    
     if (moves.empty()) {
-        moves.insert({9, 9});
+        moves.insert(std::make_pair(BOARD_SIZE/2, BOARD_SIZE/2));
     }
-    return std::vector<std::pair<int, int>>(moves.begin(), moves.end());
+    return std::vector<std::pair<int, int> >(moves.begin(), moves.end());
 }
 
-bool Game::isValidMove(int player, int row, int col) {
-    if (row < 0 || row >= 19 || col < 0 || col >= 19) return false;
+bool Game::is_valid_move(int player, int row, int col) {
+    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return false;
     if (board[row][col] != EMPTY) return false;
     if (isCapture(player, row, col)) return true;
 
     int prevCount = 0;
-    for (const auto& pattern : THREE_UNCOVERED) {
-        prevCount += countPatternOnBoard(pattern, player);
+
+    std::vector<std::vector<int> >::const_iterator itPattern;
+    for(itPattern = THREE_UNCOVERED.begin(); itPattern != THREE_UNCOVERED.end(); ++itPattern) {
+        prevCount += countPatternOnBoard(*itPattern, player);
     }
     board[row][col] = player;
     int newCount = 0;
-    for (const auto& pattern : THREE_UNCOVERED) {
-        newCount += countPatternOnBoard(pattern, player);
+    for(itPattern = THREE_UNCOVERED.begin(); itPattern != THREE_UNCOVERED.end(); ++itPattern) {
+        newCount += countPatternOnBoard(*itPattern, player);
     }
     board[row][col] = EMPTY;
     return newCount - prevCount < 2;
 }
 
-int Game::heuristicEvaluation(int player, int row, int col) {
-    
-    std::vector<std::pair<int, int>> capturedStones;
-    std::vector<std::pair<int, int>> capturedStonesOpponent;
+int Game::heuristic_evaluation(int player, int row, int col) {
+    std::vector<std::pair<int, int> > capturedStones;
     int captureCount = 0;
 
-    int prevPlayerScore = evaluateBoard(player);
-    prevPlayerScore += this->getCaptures(player) * CAPTURE_WEIGHT;
-    int prevOpponentScore = evaluateBoard(3 - player);
-    prevOpponentScore += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
-    makeMove(player, row, col, captureCount, capturedStones);
-    int playerScore = evaluateBoard(player);
-    playerScore += this->getCaptures(player) * CAPTURE_WEIGHT;
-    int opponentScore = evaluateBoard(3 - player);
-    opponentScore += this->getCaptures(3 - player) * CAPTURE_WEIGHT;
-    undoMove(player, row, col, capturedStones);
+    int opponentPlayer = opponent(player);
 
-    auto result = std::max(playerScore - prevPlayerScore, prevOpponentScore - opponentScore);
-    return result;
+    int playerScoreBefore = evaluate_board(player) + get_captures(player) * CAPTURE_WEIGHT;
+    int opponentScoreBefore = evaluate_board(opponentPlayer) + get_captures(opponentPlayer) * CAPTURE_WEIGHT;
+
+    make_move(player, row, col, captureCount, capturedStones);
+
+    int playerScoreAfter = evaluate_board(player) + get_captures(player) * CAPTURE_WEIGHT;
+    int opponentScoreAfter = evaluate_board(opponentPlayer) + get_captures(opponentPlayer) * CAPTURE_WEIGHT;
+
+    undo_move(player, row, col, capturedStones);
+
+    int playerScoreDelta = playerScoreAfter - playerScoreBefore;
+    int opponentScoreDelta = opponentScoreBefore - opponentScoreAfter;
+
+    return playerScoreDelta + opponentScoreDelta;
 }
 
 bool Game::isCapture(int player, int row, int col) const {
-    return isLeftDownDiagonalCapture(player, row, col) ||
-           isRightHorizontalCapture(player, row, col) ||
-           isUpVerticalCapture(player, row, col) ||
-           isDownVerticalCapture(player, row, col) ||
-           isLeftUpDiagonalCapture(player, row, col) ||
-           isRightUpDiagonalCapture(player, row, col) ||
-           isLeftDownDiagonalCapture(player, row, col) ||
-           isRightDownDiagonalCapture(player, row, col);
+    const std::vector<std::pair<int, int> >& directions = Game::getDirections();
+    for (std::vector<std::pair<int, int> >::const_iterator d = directions.begin(); d != directions.end(); ++d) {
+        if (isCaptureInDirection(player, row, col, d->first, d->second))
+            return true;
+    }
+    return false;
 }
 
-std::pair<int, std::set<std::pair<int, int>>> Game::countAndRemoveCaptures(int player, int row, int col) {
+std::pair<int, std::set<std::pair<int, int> > > Game::countAndRemoveCaptures(int player, int row, int col) {
     int count = 0;
-    std::set<std::pair<int, int>> capturedStones;
-    if (isLeftHorizontalCapture(player, row, col)) {
-        count++;
-        board[row][col - 1] = EMPTY;
-        board[row][col - 2] = EMPTY;
-        capturedStones.insert({row, col - 1});
-        capturedStones.insert({row, col - 2});
-    }
-    if (isRightHorizontalCapture(player, row, col)) {
-        count++;
-        board[row][col + 1] = EMPTY;
-        board[row][col + 2] = EMPTY;
-        capturedStones.insert({row, col + 1});
-        capturedStones.insert({row, col + 2});
-    }
-    if (isUpVerticalCapture(player, row, col)) {
-        count++;
-        board[row - 1][col] = EMPTY;
-        board[row - 2][col] = EMPTY;
-        capturedStones.insert({row - 1, col});
-        capturedStones.insert({row - 2, col});
-    }
-    if (isDownVerticalCapture(player, row, col)) {
-        count++;
-        board[row + 1][col] = EMPTY;
-        board[row + 2][col] = EMPTY;
-        capturedStones.insert({row + 1, col});
-        capturedStones.insert({row + 2, col});
-    }
-    if (isLeftUpDiagonalCapture(player, row, col)) {
-        count++;
-        board[row - 1][col - 1] = EMPTY;
-        board[row - 2][col - 2] = EMPTY;
-        capturedStones.insert({row - 1, col - 1});
-        capturedStones.insert({row - 2, col - 2});
-    }
-    if (isRightUpDiagonalCapture(player, row, col)) {
-        count++;
-        board[row - 1][col + 1] = EMPTY;
-        board[row - 2][col + 2] = EMPTY;
-        capturedStones.insert({row - 1, col + 1});
-        capturedStones.insert({row - 2, col + 2});
-    }
-    if (isLeftDownDiagonalCapture(player, row, col)) {
-        count++;
-        board[row + 1][col - 1] = EMPTY;
-        board[row + 2][col - 2] = EMPTY;
-        capturedStones.insert({row + 1, col - 1});
-        capturedStones.insert({row + 2, col - 2});
-    }
-    if (isRightDownDiagonalCapture(player, row, col)) {
-        count++;
-        board[row + 1][col + 1] = EMPTY;
-        board[row + 2][col + 2] = EMPTY;
-        capturedStones.insert({row + 1, col + 1});
-        capturedStones.insert({row + 2, col + 2});
-    }
-    return {count, capturedStones};
-}
-
-std::pair<int, std::set<std::pair<int, int>>> Game::countCaptures(int player, int row, int col) const {
-    int count = 0;
-    std::set<std::pair<int, int>> capturedStones;
-    if (isLeftHorizontalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row, col - 1});
-        capturedStones.insert({row, col - 2});
-    }
-    if (isRightHorizontalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row, col + 1});
-        capturedStones.insert({row, col + 2});
-    }
-    if (isUpVerticalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row - 1, col});
-        capturedStones.insert({row - 2, col});
-    }
-    if (isDownVerticalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row + 1, col});
-        capturedStones.insert({row + 2, col});
-    }
-    if (isLeftUpDiagonalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row - 1, col - 1});
-        capturedStones.insert({row - 2, col - 2});
-    }
-    if (isRightUpDiagonalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row - 1, col + 1});
-        capturedStones.insert({row - 2, col + 2});
-    }
-    if (isLeftDownDiagonalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row + 1, col - 1});
-        capturedStones.insert({row + 2, col - 2});
-    }
-    if (isRightDownDiagonalCapture(player, row, col)) {
-        count++;
-        capturedStones.insert({row + 1, col + 1});
-        capturedStones.insert({row + 2, col + 2});
-    }
-    return {count, capturedStones};
-}
-
-bool Game::checkPatternHorizontal(const std::vector<int>& pattern, int row, int col) const {
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (col + i >= 19 || board[row][col + i] != pattern[i]) {
-            return false;
+    std::set<std::pair<int, int> > capturedStones;
+    
+    const std::vector<std::pair<int, int> >& directions = Game::getDirections();
+    for (std::vector<std::pair<int, int> >::const_iterator it = directions.begin(); it != directions.end(); ++it) {
+        int dr = it->first, dc = it->second;
+        if (isCaptureInDirection(player, row, col, dr, dc)) {
+            count++;
+            int r1 = row + dr, c1 = col + dc;
+            int r2 = row + 2 * dr, c2 = col + 2 * dc;
+            board[r1][c1] = EMPTY;
+            board[r2][c2] = EMPTY;
+            capturedStones.insert(std::make_pair(r1, c1));
+            capturedStones.insert(std::make_pair(r2, c2));
         }
     }
-    return true;
+    return std::make_pair(count, capturedStones);
 }
 
-bool Game::checkPatternVertical(const std::vector<int>& pattern, int row, int col) const {
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (row + i >= 19 || board[row + i][col] != pattern[i]) {
-            return false;
-        }
-    }
-    return true;
-}
+int Game::countPatternInDirection(const std::vector<int>& pattern, int row, int col, int dr, int dc) const {
+    int m = pattern.size();
 
-bool Game::checkPatternRightDiagonal(const std::vector<int>& pattern, int row, int col) const {
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (row + i >= 19 || col + i >= 19 || board[row + i][col + i] != pattern[i]) {
-            return false;
-        }
+    int endRow = row + (m - 1) * dr;
+    int endCol = col + (m - 1) * dc;
+    if(endRow < 0 || endRow >= BOARD_SIZE || endCol < 0 || endCol >= BOARD_SIZE)
+        return 0;
+    for (int k = 0; k < m; ++k) {
+        if(board[row + k * dr][col + k * dc] != pattern[k])
+            return 0;
     }
-    return true;
-}
-
-bool Game::checkPatternLeftDiagonal(const std::vector<int>& pattern, int row, int col) const {
-    for (size_t i = 0; i < pattern.size(); ++i) {
-        if (row + i >= 19 || col - i < 0 || board[row + i][col - i] != pattern[i]) {
-            return false;
-        }
-    }
-    return true;
+    return 1;
 }
 
 int Game::countPatternOnBoard(const std::vector<int>& pattern, int player) const {
-    std::vector<int> newPattern = pattern;
+    std::vector<int> newPattern(pattern);
     if (player == PLAYER2) {
-        std::transform(newPattern.begin(), newPattern.end(), newPattern.begin(), [](int cell) {
-            return cell == PLAYER1 ? PLAYER2 : (cell == PLAYER2 ? PLAYER1 : EMPTY);
-        });
+        for (size_t i = 0; i < newPattern.size(); ++i) {
+            if (newPattern[i] == PLAYER1)
+                newPattern[i] = PLAYER2;
+            else if (newPattern[i] == PLAYER2)
+                newPattern[i] = PLAYER1;
+        }
     }
     int count = 0;
-    for (int row = 0; row < 19; ++row) {
-        for (int col = 0; col < 19; ++col) {
-            count += checkPatternHorizontal(newPattern, row, col);
-            count += checkPatternVertical(newPattern, row, col);
-            count += checkPatternRightDiagonal(newPattern, row, col);
-            count += checkPatternLeftDiagonal(newPattern, row, col);
+
+    std::vector<std::pair<int, int> > directions;
+    directions.push_back(std::make_pair(0, 1));
+    directions.push_back(std::make_pair(1, 0));
+    directions.push_back(std::make_pair(1, 1));
+    directions.push_back(std::make_pair(1, -1));
+    
+    for (int row = 0; row < BOARD_SIZE; ++row) {
+        for (int col = 0; col < BOARD_SIZE; ++col) {
+            for (std::vector<std::pair<int, int> >::const_iterator i = directions.begin(); i != directions.end(); ++i) {
+                count += countPatternInDirection(newPattern, row, col, i->first, i->second);
+            }
         }
     }
     return count;
 }
 
-int Game::getCaptures(int player) const {
-    if (player == PLAYER1) {
-        return this->player1Capture;
-    } else {
-        return this->player2Capture;
-    }
+int Game::get_captures(int player) const {
+    return (player == PLAYER1) ? player1Capture : player2Capture;
+}
+
+const std::vector<std::pair<int,int>>& Game::getDirections() {
+    static const std::vector<std::pair<int,int>> dirs = {
+         {-1, -1}, {-1, 0}, {-1, 1},
+         {0, -1},  {0, 1},
+         {1, -1},  {1, 0}, {1, 1}
+    };
+    return dirs;
 }

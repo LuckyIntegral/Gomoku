@@ -199,3 +199,4 @@ def prompt_game_setup(screen: pygame.Surface) -> dict:
 
         pygame.display.flip()
         pygame.time.delay(50)
+        

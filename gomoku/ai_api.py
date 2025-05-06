@@ -8,8 +8,8 @@ def ai_move(game, turn: int, depth: int, capt) -> bool:
     return: Number of captures
     '''
     ai = gm.AI(game, turn)
-    _, move = ai.iterativeDeepening(turn, depth)
-    return game.makeMove(turn, move[0], move[1], capt, [])
+    _, move = ai.iterative_deepening(turn, depth)
+    return game.make_move(turn, move[0], move[1], capt, [])
 
 def is_draw(board: list[list[int]]) -> bool:
     ''' Check if the game is a draw

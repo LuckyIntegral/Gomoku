@@ -5,21 +5,21 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(game_module, m) {
+PYBIND11_MODULE(game_module, m, py::mod_gil_not_used()) {
+    m.doc() = "game_module plugin";
     py::class_<Game>(m, "Game")
         .def(py::init<>())
-        .def("getBoard", &Game::getBoard)
-        .def("makeMove", &Game::makeMove)
-        .def("undoMove", &Game::undoMove)
-        .def("evaluateBoard", &Game::evaluateBoard)
-        .def("getBestPossibleMoves", &Game::getBestPossibleMoves)
-        .def("isValidMove", &Game::isValidMove)
-        .def("heuristicEvaluation", &Game::heuristicEvaluation)
-        .def("getCaptures", &Game::getCaptures);
+        .def("get_board", &Game::get_board)
+        .def("make_move", &Game::make_move)
+        .def("undo_move", &Game::undo_move)
+        .def("evaluate_board", &Game::evaluate_board)
+        .def("get_best_possible_moves", &Game::get_best_possible_moves)
+        .def("is_valid_move", &Game::is_valid_move)
+        .def("heuristic_evaluation", &Game::heuristic_evaluation)
+        .def("get_captures", &Game::get_captures)
+        .def("is_win", &Game::is_win);
 
     py::class_<AI>(m, "AI")
         .def(py::init<Game&, int>())
-        .def("getBestMove", &AI::getBestMove)
-        .def("startBackgroundCalculation", &AI::startBackgroundCalculation)
-        .def("stopBackgroundCalculation", &AI::stopBackgroundCalculation);
+        .def("iterative_deepening", &AI::iterative_deepening);
 }

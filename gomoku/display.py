@@ -199,3 +199,4 @@ def draw_menu(
     screen.blit(text, (830, 780))
     text = small_font.render("No double-threes allowed.", True, GRAY)
     screen.blit(text, (830, 800))
+    

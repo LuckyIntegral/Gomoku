@@ -1,9 +1,4 @@
 #include "Constants.hpp"
-#include <vector>
-#include <map>
-#include <string>
-#include <utility>
-#include <sstream>
 
 // WIN
 static const int win_arr[5] = {1, 1, 1, 1, 1};

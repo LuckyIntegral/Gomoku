@@ -20,6 +20,8 @@ TURNS_TO_DISPLAY = [
 
 OPPONENT = 3
 
+LOGGING_ENABLED = False
+
 class Game:
     ''' Main game class '''
     def __init__(self, screen: pygame.Surface, setup: dict[str, int]):
@@ -37,6 +39,12 @@ class Game:
         self.screen = screen
         self.setup = setup
         self.clock = self.get_time()
+
+        if LOGGING_ENABLED:
+            self.log_file = open("game_log.txt", "a")
+        else:
+            self.log_file = None
+        self.move_number = 0
 
         if setup["mode"] == game_setup.OPTION_PLAYER_VS_PLAYER_HINTS:
             setup["mode"] = game_setup.OPTION_PLAYER_VS_PLAYER
@@ -66,9 +74,9 @@ class Game:
 
     def refresh_status(self) -> None:
         ''' Refresh the game status '''
-        if self.game.get_captures(1) >= 5:
+        if self.game.is_win(1):
             self.game_status = STATUS_WIN_PLAYER1
-        elif self.game.get_captures(2) >= 5:
+        elif self.game.is_win(2):
             self.game_status = STATUS_WIN_PLAYER2
         elif api.is_draw(self.game.get_board()):
             self.game_status = STATUS_DRAW
@@ -296,6 +304,15 @@ class Game:
         self.hints = [[move[1], move[0]]]
 
 
+    def log_move(self, player_turn: int, row: int, col: int, captures: int, duration: int) -> None:
+        if not LOGGING_ENABLED or self.log_file is None:
+            return
+        piece = 'X' if player_turn == 1 else 'O'
+        log_line = f"Move {self.move_number}: Player {player_turn} ({piece}) -> ({row}, {col}) captures: {captures}, time: {duration} ms\n"
+        self.log_file.write(log_line)
+        self.log_file.flush()
+
+
     def loop(self) -> int:
         ''' Main game loop '''
         self.sync_display(TURNS_TO_DISPLAY[self.turn - 1])
@@ -310,27 +327,43 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: exit(0)
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
-                    # Player moves
-                    if (self.turn == 1 and self.player1 == "Player")\
-                            or (self.turn == 2 and self.player2 == "Player"):
+                    # Player (human) moves:
+                    if (self.turn == 1 and self.player1 == "Player") or (self.turn == 2 and self.player2 == "Player"):
                         move, inside = display.mouse_click(self.game.get_board())
                         if inside and self.game.is_valid_move(self.turn, move[0], move[1]):
-                            self.game.make_move(self.turn, move[0], move[1], self.capt[self.turn - 1], [])
-                            self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
-                            if api.is_win(self.game.get_board(), self.turn):
-                                self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
+                            current_turn = self.turn
+                            pre_capture = self.game.get_captures(current_turn)
+                            start_move = self.get_time()
+                            self.game.make_move(current_turn, move[0], move[1], self.capt[current_turn - 1], [])
+                            duration = self.get_time() - start_move
+                            post_capture = self.game.get_captures(current_turn)
+                            captured = post_capture - pre_capture
+                            self.move_number += 1
+                            self.log_move(current_turn, move[0], move[1], captured, duration)
+                            self.aftermove(TURNS_TO_DISPLAY[2 - current_turn])
+                            if self.game.is_win(current_turn):
+                                self.game_status = STATUS_WIN_PLAYER1 if current_turn == 1 else STATUS_WIN_PLAYER2
             if self.game_status != STATUS_RUNNING:
                 break
 
-            # AI moves
+            # AI moves:
             if (self.turn == 1 and self.player1 == "AI") or (self.turn == 2 and self.player2 == "AI"):
-                api.ai_move(self.game, self.turn, DEPTH, self.capt[self.turn - 1])
-                self.aftermove(TURNS_TO_DISPLAY[2 - self.turn])
-                if api.is_win(self.game.get_board(), self.turn):
-                    self.game_status = STATUS_WIN_PLAYER1 if self.turn == 1 else STATUS_WIN_PLAYER2
-
+                current_turn = self.turn
+                pre_capture = self.game.get_captures(current_turn)
+                start_move = self.get_time()
+                success, move = api.ai_move(self.game, current_turn, DEPTH, self.capt[current_turn - 1])
+                duration = self.get_time() - start_move
+                post_capture = self.game.get_captures(current_turn)
+                captured = post_capture - pre_capture
+                self.move_number += 1
+                self.log_move(current_turn, move[0], move[1], captured, duration)
+                self.aftermove(TURNS_TO_DISPLAY[2 - current_turn])
+                if self.game.is_win(current_turn):
+                    self.game_status = STATUS_WIN_PLAYER1 if current_turn == 1 else STATUS_WIN_PLAYER2
 
             pygame.time.delay(100)
 
         display.display_exit_status(self.screen, self.game_status)
-        
+        if self.log_file is not None:
+            self.log_file.close()
+        return 0

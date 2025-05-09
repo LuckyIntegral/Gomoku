@@ -34,7 +34,7 @@ test:
 	@echo "Compiling C++ files with sanitizer flags..."
 	$(CXX) -O3 -pg -std=c++11 $(shell python3-config --cflags) -o Gomoku $(filter-out bindings.cpp, $(wildcard *.cpp)) $(shell python3-config --ldflags)
 #	$(CXX) -O3 -fsanitize=address,leak,undefined -std=c++20 $(shell python3-config --cflags) -o Gomoku $(filter-out bindings.cpp, $(wildcard *.cpp)) $(shell python3-config --ldflags)
-#	ASAN_OPTIONS=detect_leaks=0 ./Gomoku
+	ASAN_OPTIONS=detect_leaks=0 ./Gomoku
 
 init	:
 	pip install -r requirements.txt

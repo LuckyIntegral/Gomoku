@@ -1,14 +1,11 @@
 #include "Constants.hpp"
 
-// WIN
 static const int win_arr[5] = {1, 1, 1, 1, 1};
 const std::vector<int> WIN(win_arr, win_arr + 5);
 
-// FOUR_UNCOVERED
 static const int four_uncovered_arr[6] = {0, 1, 1, 1, 1, 0};
 const std::vector<std::vector<int> > FOUR_UNCOVERED(1, std::vector<int>(four_uncovered_arr, four_uncovered_arr + 6));
 
-// THREE_UNCOVERED
 static const int three_uncovered_arr0[5] = {0, 1, 1, 1, 0};
 static const int three_uncovered_arr1[6] = {0, 1, 1, 0, 1, 0};
 static const int three_uncovered_arr2[6] = {0, 1, 0, 1, 1, 0};
@@ -21,7 +18,6 @@ std::vector<std::vector<int> > initThree() {
 }
 const std::vector<std::vector<int> > THREE_UNCOVERED = initThree();
 
-// TWO_UNCOVERED
 static const int two_uncovered_arr0[5] = {0, 1, 1, 0, 0};
 static const int two_uncovered_arr1[5] = {0, 0, 1, 1, 0};
 static const int two_uncovered_arr2[5] = {0, 1, 0, 1, 0};
@@ -36,7 +32,6 @@ std::vector<std::vector<int> > initTwo() {
 }
 const std::vector<std::vector<int> > TWO_UNCOVERED = initTwo();
 
-// FOUR_COVERED
 static const int four_covered_arr0[7] = {2, 1, 1, 1, 1, 0, 2};
 static const int four_covered_arr1[7] = {2, 1, 1, 1, 0, 1, 2};
 static const int four_covered_arr2[7] = {2, 1, 1, 0, 1, 1, 2};
@@ -53,7 +48,6 @@ std::vector<std::vector<int> > initFourCovered() {
 }
 const std::vector<std::vector<int> > FOUR_COVERED = initFourCovered();
 
-// PATTERNS
 std::map<std::vector<int>, int> initPatterns() {
     std::map<std::vector<int>, int> m;
     m[WIN] = WIN_WEIGHT;

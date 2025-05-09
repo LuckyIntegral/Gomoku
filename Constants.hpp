@@ -10,12 +10,16 @@ const int PLAYER2 = 2;
 const int EMPTY = 0;
 
 const int WIN_WEIGHT = 10000000;
-const int FOUR_UNCOVERED_WEIGHT = 100000;
-const int THREE_UNCOVERED_WEIGHT = 600;
+const int FOUR_UNCOVERED_WEIGHT = 5000000;
+const int THREE_UNCOVERED_WEIGHT = 100000;
 const int TWO_UNCOVERED_WEIGHT = 1;
 const int FOUR_COVERED_WEIGHT = 90;
 const int THREE_COVERED_WEIGHT = 10;
-const int CAPTURE_WEIGHT = 700;
+const int CAPTURE_WEIGHT = 500000;
+
+const int EXPANDED_RADIUS = 5;
+const int TIME_LIMIT_MS = 445;
+const int DANGEROUS_PENALTY = 5000000;
 
 const int OPPONENT_OFFSET = 3;
 inline int opponent(int player) { return OPPONENT_OFFSET - player; }

@@ -1,11 +1,36 @@
 #include "Game.hpp"
 
+std::vector<std::vector<uint64_t> > zobristTable;
+
+uint64_t Game::zobristTurn[3] = { 0, 0, 0 };
+
 Game::Game() : player1Capture(0), player2Capture(0) {
     for (int i = 0; i < BOARD_SIZE; ++i) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             board[i][j] = EMPTY;
         }
     }
+    initializeZobrist();
+    overlineRule = false;
+}
+
+void Game::initializeZobrist() {
+    std::mt19937_64 rng(42);
+    std::uniform_int_distribution<uint64_t> dist;
+
+    zobristTable.resize(BOARD_SIZE, std::vector<uint64_t>(BOARD_SIZE * 3, 0));
+    zobristTurn[1] = dist(rng);
+    zobristTurn[2] = dist(rng);
+    
+
+    zobristKey = 0;
+    for (size_t i = 0; i < BOARD_SIZE; i++) {
+        for (size_t j = 0; j < BOARD_SIZE; j++) {
+            int cell = board[i][j];
+            zobristKey ^= zobristTable[i][j * 3 + cell];
+        }
+    }
+    zobristKey ^= zobristTurn[PLAYER1];
 }
 
 std::vector<std::vector<int> > Game::get_board() const {
@@ -21,9 +46,32 @@ std::vector<std::vector<int> > Game::get_board() const {
 
 bool Game::is_win(int player) const {
     if ((player == PLAYER1 && player1Capture >= 5) ||
-        (player == PLAYER2 && player2Capture >= 5) ||
-        (countPatternOnBoard(WIN, player) > 0)) {
+        (player == PLAYER2 && player2Capture >= 5))
         return true;
+    
+    int dirs[4][2] = { {0, 1}, {1, 0}, {1, 1}, {1, -1} };
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            if (board[i][j] == player) {
+                for (int d = 0; d < 4; d++) {
+                    int count = 1;
+                    for (int k = 1; k < 5; k++) {
+                        int ni = i + k * dirs[d][0], nj = j + k * dirs[d][1];
+                        if (ni < 0 || ni >= BOARD_SIZE || nj < 0 || nj >= BOARD_SIZE)
+                            break;
+                        if (board[ni][nj] == player)
+                            count++;
+                        else
+                            break;
+                    }
+                    if (count >= 5) {
+                        if (overlineRule && count > 5)
+                            continue;
+                        return true;
+                    }
+                }
+            }
+        }
     }
     return false;
 }
@@ -54,7 +102,23 @@ bool Game::make_move(int player, int row, int col, int& capturesCount, std::vect
     capturesCount = tmp.first;
     capturedStones.assign(tmp.second.begin(), tmp.second.end());
     
+    int oldVal = board[row][col];
+    zobristKey ^= zobristTable[row][col * 3 + oldVal];
     board[row][col] = player;
+    zobristKey ^= zobristTable[row][col * 3 + player];
+    
+    for (std::vector<std::pair<int, int> >::iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
+        int r = it->first, c = it->second;
+        int opp = opponent(player);
+        zobristKey ^= zobristTable[r][c * 3 + opp];
+        board[r][c] = EMPTY;
+        zobristKey ^= zobristTable[r][c * 3 + EMPTY];
+    }
+    
+    zobristKey ^= zobristTurn[player];
+    int newTurn = opponent(player); 
+    zobristKey ^= zobristTurn[newTurn];
+
     for (std::vector<std::pair<int, int> >::const_iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
         occupiedPositions.erase(*it);
     }
@@ -71,6 +135,24 @@ bool Game::make_move(int player, int row, int col, int& capturesCount, std::vect
 }
 
 void Game::undo_move(int player, int row, int col, const std::vector<std::pair<int, int> >& capturedStones) {
+    int newTurn = opponent(player);
+    zobristKey ^= zobristTurn[newTurn];
+    zobristKey ^= zobristTurn[player];
+    
+    int currentVal = board[row][col];
+    zobristKey ^= zobristTable[row][col * 3 + currentVal];
+    board[row][col] = EMPTY;
+    zobristKey ^= zobristTable[row][col * 3 + EMPTY];
+    
+    for (std::vector<std::pair<int, int> >::iterator it = const_cast<std::vector<std::pair<int, int> >&>(capturedStones).begin();
+         it != const_cast<std::vector<std::pair<int, int> >&>(capturedStones).end(); ++it) {
+        int r = it->first, c = it->second;
+        int opp = opponent(player);
+        zobristKey ^= zobristTable[r][c * 3 + EMPTY];
+        board[r][c] = opp;
+        zobristKey ^= zobristTable[r][c * 3 + opp];
+    }
+
     board[row][col] = EMPTY;
 
     for (std::vector<std::pair<int, int> >::const_iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
@@ -90,34 +172,63 @@ void Game::undo_move(int player, int row, int col, const std::vector<std::pair<i
 }
 
 int Game::evaluate_board(int player) const {
+    int opp = opponent(player);
+    if (is_win(player)) return WIN_WEIGHT;
+    if (is_win(opp)) return -WIN_WEIGHT;
+    
     int score = 0;
-
-    std::map<std::vector<int>, int>::const_iterator it;
-    for(it = PATTERNS.begin(); it != PATTERNS.end(); ++it) {
+    score += countPatternOnBoard(FOUR_UNCOVERED[0], player) * FOUR_UNCOVERED_WEIGHT;
+    score -= countPatternOnBoard(FOUR_UNCOVERED[0], opp) * FOUR_UNCOVERED_WEIGHT * 10;
+    
+    score += get_captures(player) * CAPTURE_WEIGHT;
+    score -= get_captures(opp) * CAPTURE_WEIGHT;
+    for (std::map<std::vector<int>, int>::const_iterator it = PATTERNS.begin(); it != PATTERNS.end(); ++it) {
         score += countPatternOnBoard(it->first, player) * it->second;
     }
+    score -= countPatternOnBoard(THREE_UNCOVERED[0], opp) * THREE_UNCOVERED_WEIGHT * 5;
+    
     return score;
 }
 
-std::vector<std::pair<int, int> > Game::get_best_possible_moves(int /*player*/) {
+std::vector<std::pair<int,int> > Game::get_immediate_threats(int player) {
+    std::vector<std::pair<int,int> > threats;
+    int opp = opponent(player);
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            if (board[i][j] != EMPTY) continue;
+            if (would_create_win(opp, i, j))
+                threats.emplace_back(i, j);
+        }
+    }
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            if (board[i][j] != EMPTY) continue;
+            board[i][j] = opp;
+            if (countPatternOnBoard(FOUR_UNCOVERED[0], opp) > 0)
+                threats.emplace_back(i, j);
+            board[i][j] = EMPTY;
+        }
+    }
+    return threats;
+}
+
+std::vector<std::pair<int, int> > Game::get_best_possible_moves(int player) {
     std::set<std::pair<int, int> > moves;
-    const std::vector<std::pair<int, int> >& directions = Game::getDirections();
-    
-    for (std::set<std::pair<int, int> >::const_iterator pos = occupiedPositions.begin(); pos != occupiedPositions.end(); ++pos) {
-        int row = pos->first;
-        int col = pos->second;
-        for (std::vector<std::pair<int, int> >::const_iterator d = directions.begin(); d != directions.end(); ++d) {
-            int nr = row + d->first;
-            int nc = col + d->second;
-            if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE &&
-                board[nr][nc] == EMPTY) {
-                moves.insert(std::make_pair(nr, nc));
+    for (std::set<std::pair<int, int> >::iterator it = occupiedPositions.begin(); it != occupiedPositions.end(); ++it) {
+        for (int dx = -EXPANDED_RADIUS; dx <= EXPANDED_RADIUS; dx++) {
+            for (int dy = -EXPANDED_RADIUS; dy <= EXPANDED_RADIUS; dy++) {
+                int nx = it->first + dx;
+                int ny = it->second + dy;
+                if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && board[nx][ny] == EMPTY)
+                    moves.insert(std::make_pair(nx, ny));
             }
         }
     }
+    find_potential_wins(player, moves);
+    find_potential_wins(opponent(player), moves);
     
     if (moves.empty()) {
-        moves.insert(std::make_pair(BOARD_SIZE/2, BOARD_SIZE/2));
+        moves.insert({BOARD_SIZE / 2, BOARD_SIZE / 2});
     }
     return std::vector<std::pair<int, int> >(moves.begin(), moves.end());
 }
@@ -239,11 +350,31 @@ int Game::get_captures(int player) const {
     return (player == PLAYER1) ? player1Capture : player2Capture;
 }
 
-const std::vector<std::pair<int,int>>& Game::getDirections() {
-    static const std::vector<std::pair<int,int>> dirs = {
+const std::vector<std::pair<int,int> >& Game::getDirections() {
+    static const std::vector<std::pair<int,int> > dirs = {
          {-1, -1}, {-1, 0}, {-1, 1},
          {0, -1},  {0, 1},
          {1, -1},  {1, 0}, {1, 1}
     };
     return dirs;
+}
+
+bool Game::would_create_win(int player, int row, int col) const {
+    int oldVal = board[row][col];
+    int &cell = const_cast<int&>(board[row][col]);
+    cell = player;
+    bool win = is_win(player);
+    cell = oldVal;
+    return win;
+}
+
+void Game::find_potential_wins(int player, std::set<std::pair<int,int> >& moves) {
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] != EMPTY) continue;
+            if (would_create_win(player, i, j)) {
+                moves.insert({i, j});
+            }
+        }
+    }
 }

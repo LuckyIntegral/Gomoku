@@ -1,16 +1,50 @@
 #include "AI.hpp"
-#include "Game.hpp"
 
-AI::AI(Game& game, int player)
-    : game(game), player(player)
-{
-    transpositionTable.clear();
-}
+extern std::vector<std::vector<uint64_t>> zobristTable;
+std::unordered_map<uint64_t, TranspositionEntry> transpositionTable;
 
 static std::string intToString(int n) {
     std::stringstream ss;
     ss << n;
     return ss.str();
+}
+
+static inline uint64_t getFullKey(const Game& game, [[maybe_unused]] int player) {
+    return game.get_zobrist_key();
+}
+
+AI::AI(Game& game, int player)
+    : game(game), player(player)
+{
+    transpositionTable.clear();
+    initializeZobrist();
+}
+
+void AI::initializeZobrist() {
+    if (!zobristTable.empty()) return;
+    std::mt19937_64 rng(42);
+    int rows = game.get_board().size();
+    int cols = (rows > 0) ? game.get_board()[0].size() : 0;
+    zobristTable.resize(rows, std::vector<uint64_t>(cols * 3));
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                zobristTable[i][j * 3 + k] = rng();
+            }
+        }
+    }
+}
+
+uint64_t AI::computeZobristKey() const {
+    uint64_t key = 0;
+    std::vector<std::vector<int> > board = game.get_board();
+    for (size_t i = 0; i < board.size(); ++i) {
+        for (size_t j = 0; j < board[i].size(); ++j) {
+            int cell = board[i][j];
+            key ^= zobristTable[i][j * 3 + cell];
+        }
+    }
+    return key;
 }
 
 std::string AI::hashBoard() const {
@@ -26,65 +60,181 @@ std::string AI::hashBoard() const {
     return boardHash;
 }
 
-std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alpha, int beta, bool isMaximizing) {
-    if (depth == 0) {
-        int eval = game.evaluate_board(player) + game.get_captures(player) * CAPTURE_WEIGHT;
-        return std::make_pair(eval, std::make_pair(-1, -1));
+std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alpha, int beta, bool isMaximizing,
+    const std::chrono::high_resolution_clock::time_point &start, int timeLimit) {
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count() > timeLimit) {
+        int eval = game.evaluate_board(this->player) + game.get_captures(this->player) * CAPTURE_WEIGHT;
+        return {eval, {-1, -1}};
     }
-    std::pair<int, int> bestMove = std::make_pair(-1, -1);
-    std::vector< std::pair<int, int> > moves = game.get_best_possible_moves(player);
+
+    if(depth > 0) {
+        std::vector<std::pair<int,int>> immediateMoves;
+        if(!immediateMoves.empty()){
+            return { WIN_WEIGHT, immediateMoves[0] };
+        }
+    }
     
+    uint64_t key = getFullKey(game, player);
+    std::unordered_map<uint64_t, TranspositionEntry>::iterator ttIt = transpositionTable.find(key);
+    if (ttIt != transpositionTable.end()) {
+        TranspositionEntry& entry = ttIt->second;
+        if (entry.depth >= depth && (
+            entry.type == EntryType::EXACT ||
+            (entry.type == EntryType::LOWER && entry.score >= beta) ||
+            (entry.type == EntryType::UPPER && entry.score <= alpha))) {
+            return { entry.score, entry.bestMove };
+        }
+    }
+
+    if (depth == 0) {
+        int eval = game.evaluate_board(this->player) + game.get_captures(this->player) * CAPTURE_WEIGHT;
+        TranspositionEntry entry {0, eval, EntryType::EXACT, std::make_pair(-1,-1)};
+        transpositionTable[key] = entry;
+        return {eval, std::make_pair(-1, -1)};
+    }
+    
+    std::pair<int, int> bestMove = std::make_pair(-1, -1);
+    std::vector<std::pair<int, int> > moves = game.get_best_possible_moves(player);
+    
+    std::vector<std::pair<int, std::pair<int, int> > > scoredMoves;
+    for (std::vector<std::pair<int, int> >::iterator it = moves.begin(); it != moves.end(); ++it) {
+        int score = game.heuristic_evaluation(player, it->first, it->second);
+        if (game.would_create_win(opponent(player), it->first, it->second)) {
+            score += FOUR_UNCOVERED_WEIGHT * 2;
+        }
+        scoredMoves.push_back(std::make_pair(score, *it));
+    }
+
     if (isMaximizing) {
-        int bestScore = -WIN_WEIGHT;
+        std::sort(scoredMoves.begin(), scoredMoves.end(), Descending());
+    } else {
+        std::sort(scoredMoves.begin(), scoredMoves.end(), Ascending());
+    }
+    moves.clear();
+    for (std::vector<std::pair<int, std::pair<int, int> > >::iterator it = scoredMoves.begin(); it != scoredMoves.end(); ++it)
+        moves.push_back(it->second);
+    
+    std::vector<std::pair<int, int> > immediateMoves;
+    std::vector<std::pair<int, int> > threatMoves = game.get_immediate_threats(player);
+    for (std::vector<std::pair<int, int> >::const_iterator it = threatMoves.begin(); it != threatMoves.end(); ++it)
+        immediateMoves.push_back(*it);
+    for (std::vector<std::pair<int, int> >::const_iterator it = moves.begin(); it != moves.end(); ++it) {
+        if (game.would_create_win(player, it->first, it->second))
+            immediateMoves.push_back(*it);
+    }
+    if (!immediateMoves.empty()) {
+        return std::make_pair(WIN_WEIGHT, immediateMoves[0]);
+    }
+
+    int bestScore = isMaximizing ? -WIN_WEIGHT : WIN_WEIGHT;
+    int alphaOrig = alpha;
+    if (isMaximizing) {
         for (size_t i = 0; i < moves.size(); i++) {
             int capturesCount = 0;
-            std::vector< std::pair<int, int> > capturedStones;
+            std::vector<std::pair<int, int>> capturedStones;
             game.make_move(player, moves[i].first, moves[i].second, capturesCount, capturedStones);
-            std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, false);
-            int score = result.first + game.get_captures(player) * CAPTURE_WEIGHT;
+            
+            if (game.is_win(opponent(player))) {
+                game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
+                continue;
+            }
+            std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, false, start, timeLimit);
+            int score = result.first;
             game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
+            
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = moves[i];
             }
-            if (score > alpha) { alpha = score; }
-            if (beta <= alpha) { break; }
+            alpha = std::max(alpha, score);
+            if (beta <= alpha) break;
         }
-        return std::make_pair(bestScore, bestMove);
-    }
-    else {
-        int bestScore = WIN_WEIGHT;
+    } else {
         for (size_t i = 0; i < moves.size(); i++) {
             int capturesCount = 0;
-            std::vector< std::pair<int, int> > capturedStones;
+            std::vector<std::pair<int, int>> capturedStones;
             game.make_move(player, moves[i].first, moves[i].second, capturesCount, capturedStones);
-            std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, true);
-            int score = -result.first - game.get_captures(player) * CAPTURE_WEIGHT;
+            
+            if (game.is_win(opponent(player))) {
+                game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
+                continue;
+            }
+            std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, true, start, timeLimit);
+            int score = result.first;
             game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
+            
             if (score < bestScore) {
                 bestScore = score;
                 bestMove = moves[i];
             }
-            if (score < beta) { beta = score; }
-            if (beta <= alpha) { break; }
+            beta = std::min(beta, score);
+            if (beta <= alpha) break;
         }
-        return std::make_pair(bestScore, bestMove);
     }
+    
+    TranspositionEntry entry;
+    entry.depth = depth;
+    entry.score = bestScore;
+    entry.bestMove = bestMove;
+    if (bestScore <= alphaOrig) {
+        entry.type = EntryType::UPPER;
+    } else if (bestScore >= beta) {
+        entry.type = EntryType::LOWER;
+    } else {
+        entry.type = EntryType::EXACT;
+    }
+    transpositionTable[key] = entry;
+    
+    std::pair<int, std::pair<int, int> > result = {bestScore, bestMove};
+    int score = result.first;
+    bool dangerous = false;
+    if(dangerous) {
+        score -= DANGEROUS_PENALTY;
+    }
+    result.first = score;
+    return result;
 }
 
 void AI::clearTranspositionTable() {
     transpositionTable.clear();
 }
 
-std::pair<int, std::pair<int, int> > AI::iterative_deepening(int player, int maxDepth) {
+std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxDepth) {
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::pair<int, std::pair<int, int> > bestMove = std::make_pair(0, std::make_pair(-1, -1));
-    int depth = 1;
-    while(depth <= maxDepth) {
-        bestMove = minimax(player, depth, -WIN_WEIGHT, WIN_WEIGHT, true);
-        if (bestMove.first >= WIN_WEIGHT || game.get_captures(player) >= 5) {
-            break;
+    
+    int moveCount = 0;
+    std::vector<std::vector<int> > board = game.get_board();
+    for (std::vector<std::vector<int> >::iterator rowIt = board.begin(); rowIt != board.end(); ++rowIt) {
+        for (std::vector<int>::iterator cellIt = rowIt->begin(); cellIt != rowIt->end(); ++cellIt) {
+            if (*cellIt != EMPTY)
+                moveCount++;
         }
-        ++depth;
+    }
+    if (moveCount < 4) {
+        static const std::vector<std::pair<int,int> > opening_moves = { std::make_pair(9,9), std::make_pair(8,8), std::make_pair(10,10), std::make_pair(7,7) };
+        for (std::vector<std::pair<int,int> >::const_iterator it = opening_moves.begin(); it != opening_moves.end(); ++it) {
+            if (game.is_valid_move(player, it->first, it->second))
+                return std::make_pair(WIN_WEIGHT, *it);
+        }
+    }
+    
+    int depth = 1;
+    while (depth <= maxDepth) {
+        std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - start);
+        if (elapsed.count() > TIME_LIMIT_MS)
+            break;
+        clearTranspositionTable();
+        bestMove = minimax(player, depth, -WIN_WEIGHT*2, WIN_WEIGHT*2, true, start, TIME_LIMIT_MS);
+        if (abs(bestMove.first) >= WIN_WEIGHT)
+            break;
+        depth += (depth < 5) ? 1 : 2;
+    }
+    if (bestMove.second.first == -1) {
+        std::vector<std::pair<int, int> > moves = game.get_best_possible_moves(player);
+        if (!moves.empty())
+            bestMove.second = moves[0];
     }
     return bestMove;
 }

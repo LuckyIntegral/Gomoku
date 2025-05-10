@@ -24,6 +24,10 @@ const int DANGEROUS_PENALTY = 5000000;
 const int OPPONENT_OFFSET = 3;
 inline int opponent(int player) { return OPPONENT_OFFSET - player; }
 
+const int DYNAMIC_WEIGHT = 50;
+const int FRONTIER_WEIGHT = 20;
+const int CAPTURE_STREAK_WEIGHT = 200000;
+
 extern const std::vector<int> WIN;
 extern const std::vector<std::vector<int> > FOUR_UNCOVERED;
 extern const std::vector<std::vector<int> > THREE_UNCOVERED;

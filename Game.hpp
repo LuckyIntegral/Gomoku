@@ -29,6 +29,11 @@ class Game {
         int countPatternInDirection(const std::vector<int>& pattern, int row, int col, int dr, int dc) const;
         bool isCaptureInDirection(int player, int row, int col, int dr, int dc) const;
         void find_potential_wins(int player, std::set<std::pair<int,int>>& moves);
+        int dynamic_evaluation(int player) const;
+        int frontier_evaluation(int player) const;
+
+        int lastMovePlayer;
+        int captureStreak[3];
 
     public:
         Game();

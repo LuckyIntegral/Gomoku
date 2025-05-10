@@ -1,6 +1,7 @@
 #include "Game.hpp"
 
 std::vector<std::vector<uint64_t> > zobristTable;
+static std::vector<std::vector<int>> moveHistory;
 
 uint64_t Game::zobristTurn[3] = { 0, 0, 0 };
 
@@ -10,8 +11,15 @@ Game::Game() : player1Capture(0), player2Capture(0) {
             board[i][j] = EMPTY;
         }
     }
+    if (moveHistory.empty()) {
+        moveHistory.resize(BOARD_SIZE, std::vector<int>(BOARD_SIZE, 0));
+    }
     initializeZobrist();
     overlineRule = false;
+
+    lastMovePlayer = 0;
+    captureStreak[PLAYER1] = 0;
+    captureStreak[PLAYER2] = 0;
 }
 
 void Game::initializeZobrist() {
@@ -21,7 +29,6 @@ void Game::initializeZobrist() {
     zobristTable.resize(BOARD_SIZE, std::vector<uint64_t>(BOARD_SIZE * 3, 0));
     zobristTurn[1] = dist(rng);
     zobristTurn[2] = dist(rng);
-    
 
     zobristKey = 0;
     for (size_t i = 0; i < BOARD_SIZE; i++) {
@@ -106,7 +113,9 @@ bool Game::make_move(int player, int row, int col, int& capturesCount, std::vect
     zobristKey ^= zobristTable[row][col * 3 + oldVal];
     board[row][col] = player;
     zobristKey ^= zobristTable[row][col * 3 + player];
-    
+
+    moveHistory[row][col]++;
+
     for (std::vector<std::pair<int, int> >::iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
         int r = it->first, c = it->second;
         int opp = opponent(player);
@@ -131,6 +140,16 @@ bool Game::make_move(int player, int row, int col, int& capturesCount, std::vect
         player2Capture += capturesCount;
     }
     
+    if (capturesCount > 0) {
+        if (lastMovePlayer == player)
+            captureStreak[player]++;
+        else
+            captureStreak[player] = 1;
+    } else {
+        captureStreak[player] = 0;
+    }
+    lastMovePlayer = player;
+    
     return true;
 }
 
@@ -143,7 +162,9 @@ void Game::undo_move(int player, int row, int col, const std::vector<std::pair<i
     zobristKey ^= zobristTable[row][col * 3 + currentVal];
     board[row][col] = EMPTY;
     zobristKey ^= zobristTable[row][col * 3 + EMPTY];
-    
+
+    moveHistory[row][col]--;
+
     for (std::vector<std::pair<int, int> >::iterator it = const_cast<std::vector<std::pair<int, int> >&>(capturedStones).begin();
          it != const_cast<std::vector<std::pair<int, int> >&>(capturedStones).end(); ++it) {
         int r = it->first, c = it->second;
@@ -174,8 +195,8 @@ void Game::undo_move(int player, int row, int col, const std::vector<std::pair<i
 int Game::evaluate_board(int player) const {
     int opp = opponent(player);
     if (is_win(player)) return WIN_WEIGHT;
-    if (is_win(opp)) return -WIN_WEIGHT;
-    
+    if (is_win(opp))    return -WIN_WEIGHT;
+
     int score = 0;
     score += countPatternOnBoard(FOUR_UNCOVERED[0], player) * FOUR_UNCOVERED_WEIGHT;
     score -= countPatternOnBoard(FOUR_UNCOVERED[0], opp) * FOUR_UNCOVERED_WEIGHT * 10;
@@ -186,8 +207,41 @@ int Game::evaluate_board(int player) const {
         score += countPatternOnBoard(it->first, player) * it->second;
     }
     score -= countPatternOnBoard(THREE_UNCOVERED[0], opp) * THREE_UNCOVERED_WEIGHT * 5;
+
+    score += dynamic_evaluation(player) - dynamic_evaluation(opp);
+    score += frontier_evaluation(player) * FRONTIER_WEIGHT
+          - frontier_evaluation(opp) * FRONTIER_WEIGHT;
+    score += captureStreak[player] * CAPTURE_STREAK_WEIGHT
+           - captureStreak[opp] * CAPTURE_STREAK_WEIGHT;
     
     return score;
+}
+
+int Game::dynamic_evaluation(int player) const {
+    int bonus = 0;
+    int center = BOARD_SIZE/2;
+    for (int r = 0; r < BOARD_SIZE; ++r)
+        for (int c = 0; c < BOARD_SIZE; ++c)
+            if (board[r][c]==player)
+                bonus += (BOARD_SIZE - (abs(r-center)+abs(c-center)));
+    return bonus;
+}
+
+int Game::frontier_evaluation(int player) const {
+    int frontier = 0;
+    const auto& dirs = getDirections();
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            if (board[r][c] != player) continue;
+            for (auto& d: dirs) {
+                int nr = r + d.first, nc = c + d.second;
+                if (nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE
+                    && board[nr][nc]==EMPTY)
+                    ++frontier;
+            }
+        }
+    }
+    return frontier;
 }
 
 std::vector<std::pair<int,int> > Game::get_immediate_threats(int player) {
@@ -254,6 +308,11 @@ bool Game::is_valid_move(int player, int row, int col) {
 }
 
 int Game::heuristic_evaluation(int player, int row, int col) {
+    int history = moveHistory[row][col];
+    
+    double decayFactor = 0.9;
+    double dynamicHistory = history * pow(decayFactor, history);
+    
     std::vector<std::pair<int, int> > capturedStones;
     int captureCount = 0;
 
@@ -272,7 +331,9 @@ int Game::heuristic_evaluation(int player, int row, int col) {
     int playerScoreDelta = playerScoreAfter - playerScoreBefore;
     int opponentScoreDelta = opponentScoreBefore - opponentScoreAfter;
 
-    return playerScoreDelta + opponentScoreDelta;
+    int dynamicBonus = static_cast<int>(DYNAMIC_WEIGHT * dynamicHistory);
+    
+    return playerScoreDelta + opponentScoreDelta + dynamicBonus;
 }
 
 bool Game::isCapture(int player, int row, int col) const {

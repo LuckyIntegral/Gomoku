@@ -1,6 +1,7 @@
 #include "Game.hpp"
 
 std::vector<std::vector<uint64_t> > zobristTable;
+static std::vector<std::vector<int>> moveHistory;
 
 uint64_t Game::zobristTurn[3] = { 0, 0, 0 };
 
@@ -9,6 +10,9 @@ Game::Game() : player1Capture(0), player2Capture(0) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             board[i][j] = EMPTY;
         }
+    }
+    if (moveHistory.empty()) {
+        moveHistory.resize(BOARD_SIZE, std::vector<int>(BOARD_SIZE, 0));
     }
     initializeZobrist();
     overlineRule = false;
@@ -21,7 +25,6 @@ void Game::initializeZobrist() {
     zobristTable.resize(BOARD_SIZE, std::vector<uint64_t>(BOARD_SIZE * 3, 0));
     zobristTurn[1] = dist(rng);
     zobristTurn[2] = dist(rng);
-    
 
     zobristKey = 0;
     for (size_t i = 0; i < BOARD_SIZE; i++) {
@@ -106,7 +109,9 @@ bool Game::make_move(int player, int row, int col, int& capturesCount, std::vect
     zobristKey ^= zobristTable[row][col * 3 + oldVal];
     board[row][col] = player;
     zobristKey ^= zobristTable[row][col * 3 + player];
-    
+
+    moveHistory[row][col]++;
+
     for (std::vector<std::pair<int, int> >::iterator it = capturedStones.begin(); it != capturedStones.end(); ++it) {
         int r = it->first, c = it->second;
         int opp = opponent(player);
@@ -143,7 +148,9 @@ void Game::undo_move(int player, int row, int col, const std::vector<std::pair<i
     zobristKey ^= zobristTable[row][col * 3 + currentVal];
     board[row][col] = EMPTY;
     zobristKey ^= zobristTable[row][col * 3 + EMPTY];
-    
+
+    moveHistory[row][col]--;
+
     for (std::vector<std::pair<int, int> >::iterator it = const_cast<std::vector<std::pair<int, int> >&>(capturedStones).begin();
          it != const_cast<std::vector<std::pair<int, int> >&>(capturedStones).end(); ++it) {
         int r = it->first, c = it->second;
@@ -254,6 +261,8 @@ bool Game::is_valid_move(int player, int row, int col) {
 }
 
 int Game::heuristic_evaluation(int player, int row, int col) {
+    int history = moveHistory[row][col];
+
     std::vector<std::pair<int, int> > capturedStones;
     int captureCount = 0;
 
@@ -272,7 +281,9 @@ int Game::heuristic_evaluation(int player, int row, int col) {
     int playerScoreDelta = playerScoreAfter - playerScoreBefore;
     int opponentScoreDelta = opponentScoreBefore - opponentScoreAfter;
 
-    return playerScoreDelta + opponentScoreDelta;
+    int dynamicBonus = DYNAMIC_WEIGHT * history;
+
+    return playerScoreDelta + opponentScoreDelta + dynamicBonus;
 }
 
 bool Game::isCapture(int player, int row, int col) const {

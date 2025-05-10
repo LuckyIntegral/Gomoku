@@ -229,14 +229,15 @@ int Game::dynamic_evaluation(int player) const {
 
 int Game::frontier_evaluation(int player) const {
     int frontier = 0;
-    const auto& dirs = getDirections();
+    const std::vector<std::pair<int, int> >& dirs = getDirections();
     for (int r = 0; r < BOARD_SIZE; ++r) {
         for (int c = 0; c < BOARD_SIZE; ++c) {
             if (board[r][c] != player) continue;
-            for (auto& d: dirs) {
-                int nr = r + d.first, nc = c + d.second;
-                if (nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE
-                    && board[nr][nc]==EMPTY)
+            for (std::vector<std::pair<int, int> >::const_iterator d = dirs.begin();
+                 d != dirs.end(); ++d) {
+                int nr = r + d->first, nc = c + d->second;
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE &&
+                    board[nr][nc] == EMPTY)
                     ++frontier;
             }
         }

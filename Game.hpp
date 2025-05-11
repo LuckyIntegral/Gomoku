@@ -50,8 +50,10 @@ class Game {
         int get_captures(int player) const;
         bool is_win(int player) const;
         static const std::vector<std::pair<int,int> >& getDirections();
+        static const std::vector<std::pair<int,int> >& getLineDirections();
         uint64_t get_zobrist_key() const { return zobristKey; }
         void initializeZobrist();
         std::vector<std::pair<int,int>> get_immediate_threats(int player);
         bool would_create_win(int player, int row, int col) const;
+        bool matchesThreeInDirection(int player, int row, int col, int dr, int dc) const;
 };

@@ -114,16 +114,19 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
     for (std::vector<std::pair<int, std::pair<int, int> > >::iterator it = scoredMoves.begin(); it != scoredMoves.end(); ++it)
         moves.push_back(it->second);
     
-    std::vector<std::pair<int, int> > immediateMoves;
-    std::vector<std::pair<int, int> > threatMoves = game.get_immediate_threats(player);
-    for (std::vector<std::pair<int, int> >::const_iterator it = threatMoves.begin(); it != threatMoves.end(); ++it)
-        immediateMoves.push_back(*it);
-    for (std::vector<std::pair<int, int> >::const_iterator it = moves.begin(); it != moves.end(); ++it) {
-        if (game.would_create_win(player, it->first, it->second))
-            immediateMoves.push_back(*it);
-    }
-    if (!immediateMoves.empty()) {
-        return std::make_pair(WIN_WEIGHT, immediateMoves[0]);
+    {
+        std::vector<std::pair<int, int>> winMoves;
+        for (std::vector<std::pair<int, int>>::iterator it = moves.begin(); it != moves.end(); ++it) {
+            if (game.would_create_win(player, it->first, it->second))
+                winMoves.push_back(*it);
+        }
+        if (!winMoves.empty()) {
+            return { WIN_WEIGHT, winMoves[0] };
+        }
+        std::vector<std::pair<int, int>> threatMoves = game.get_immediate_threats(player);
+        if (!threatMoves.empty()) {
+            return { WIN_WEIGHT, threatMoves[0] };
+        }
     }
 
     int bestScore = isMaximizing ? -WIN_WEIGHT : WIN_WEIGHT;

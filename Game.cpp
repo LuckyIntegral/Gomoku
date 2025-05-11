@@ -266,7 +266,7 @@ std::vector<std::pair<int,int> > Game::get_immediate_threats(int player) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             if (board[i][j] != EMPTY) continue;
             if (would_create_win(opp, i, j))
-                threats.emplace_back(i, j);
+                threats.push_back(std::make_pair(i, j));
         }
     }
     return threats;
@@ -287,27 +287,73 @@ std::vector<std::pair<int, int> > Game::get_best_possible_moves(int player) {
     find_potential_wins(player, moves);
     find_potential_wins(opponent(player), moves);
     if (moves.empty()) {
-        moves.insert({BOARD_SIZE / 2, BOARD_SIZE / 2});
+        moves.insert(std::make_pair(BOARD_SIZE / 2, BOARD_SIZE / 2));
     }
     return std::vector<std::pair<int, int> >(moves.begin(), moves.end());
 }
 
-bool Game::is_valid_move(int player, int row, int col) {
-    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return false;
-    if (board[row][col] != EMPTY) return false;
-    if (isCapture(player, row, col)) return true;
-    int prevCount = 0;
-    std::vector<std::vector<int> >::const_iterator itPattern;
-    for(itPattern = THREE_UNCOVERED.begin(); itPattern != THREE_UNCOVERED.end(); ++itPattern) {
-        prevCount += countPatternOnBoard(*itPattern, player);
+bool Game::matchesThreeInDirection(int player, int row, int col, int dr, int dc) const {
+    int negCount = 0;
+    for (int i = 1; i <= 2; ++i) {
+        int r = row - i * dr, c = col - i * dc;
+        if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || board[r][c] != player)
+            break;
+        negCount++;
     }
+    int posCount = 0;
+    for (int i = 1; i <= 2; ++i) {
+        int r = row + i * dr, c = col + i * dc;
+        if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE || board[r][c] != player)
+            break;
+        posCount++;
+    }
+    int total = negCount + posCount + 1;
+    if (total != 3)
+        return false;
+    
+    int start_r = row - negCount * dr;
+    int start_c = col - negCount * dc;
+    int end_r = row + posCount * dr;
+    int end_c = col + posCount * dc;
+    
+    int before_r = start_r - dr;
+    int before_c = start_c - dc;
+    if (before_r >= 0 && before_r < BOARD_SIZE && before_c >= 0 && before_c < BOARD_SIZE) {
+        if (board[before_r][before_c] != EMPTY)
+            return false;
+    }
+    
+    int after_r = end_r + dr;
+    int after_c = end_c + dc;
+    if (after_r >= 0 && after_r < BOARD_SIZE && after_c >= 0 && after_c < BOARD_SIZE) {
+        if (board[after_r][after_c] != EMPTY)
+            return false;
+    }
+    
+    return true;
+}
+
+bool Game::is_valid_move(int player, int row, int col) {
+    if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE)
+        return false;
+    if (board[row][col] != EMPTY)
+        return false;
+    
+    int newThrees = 0;
+    
     board[row][col] = player;
-    int newCount = 0;
-    for(itPattern = THREE_UNCOVERED.begin(); itPattern != THREE_UNCOVERED.end(); ++itPattern) {
-        newCount += countPatternOnBoard(*itPattern, player);
+    for (std::vector<std::pair<int, int> >::const_iterator d = getLineDirections().begin();
+         d != getLineDirections().end(); ++d) {
+        if (matchesThreeInDirection(player, row, col, d->first, d->second)) {
+            newThrees++;
+            if (newThrees >= 2) {
+                board[row][col] = EMPTY;
+                return false;
+            }
+        }
     }
     board[row][col] = EMPTY;
-    return newCount - prevCount < 2;
+    return true;
 }
 
 int Game::heuristic_evaluation(int player, int row, int col) {
@@ -353,8 +399,6 @@ std::pair<int, std::set<std::pair<int, int> > > Game::countAndRemoveCaptures(int
             count++;
             int r1 = row + dr, c1 = col + dc;
             int r2 = row + 2 * dr, c2 = col + 2 * dc;
-            board[r1][c1] = EMPTY;
-            board[r2][c2] = EMPTY;
             capturedStones.insert(std::make_pair(r1, c1));
             capturedStones.insert(std::make_pair(r2, c2));
         }
@@ -408,11 +452,16 @@ int Game::get_captures(int player) const {
 
 const std::vector<std::pair<int,int> >& Game::getDirections() {
     static const std::vector<std::pair<int,int> > dirs = {
-         {-1, -1}, {-1, 0}, {-1, 1},
-         {0, -1},  {0, 1},
-         {1, -1},  {1, 0}, {1, 1}
+        {0, 1}, {0, -1}, {1, 0}, {-1, 0}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}
     };
     return dirs;
+}
+
+const std::vector<std::pair<int,int> >& Game::getLineDirections() {
+    static const std::vector<std::pair<int,int> > lineDirs = {
+        {0, 1}, {1, 0}, {1, 1}, {1, -1}
+    };
+    return lineDirs;
 }
 
 bool Game::would_create_win(int player, int row, int col) const {
@@ -429,7 +478,7 @@ void Game::find_potential_wins(int player, std::set<std::pair<int,int> >& moves)
         for (int j = 0; j < BOARD_SIZE; j++) {
             if (board[i][j] != EMPTY) continue;
             if (would_create_win(player, i, j)) {
-                moves.insert({i, j});
+                moves.insert(std::make_pair(i, j));
             }
         }
     }

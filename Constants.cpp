@@ -20,11 +20,17 @@ const std::vector<std::vector<int>> FOUR_UNCOVERED = initFourUncovered();
 static const int three_uncovered_arr0[5] = {0, 1, 1, 1, 0};
 static const int three_uncovered_arr1[6] = {0, 1, 1, 0, 1, 0};
 static const int three_uncovered_arr2[6] = {0, 1, 0, 1, 1, 0};
+
+static const int three_uncovered_arr3[4] = {1, 1, 1, 0};
+static const int three_uncovered_arr4[4] = {0, 1, 1, 1};
+
 std::vector<std::vector<int> > initThree() {
     std::vector<std::vector<int> > v;
     v.push_back(std::vector<int>(three_uncovered_arr0, three_uncovered_arr0+5));
     v.push_back(std::vector<int>(three_uncovered_arr1, three_uncovered_arr1+6));
     v.push_back(std::vector<int>(three_uncovered_arr2, three_uncovered_arr2+6));
+    v.push_back(std::vector<int>(three_uncovered_arr3, three_uncovered_arr3+4));
+    v.push_back(std::vector<int>(three_uncovered_arr4, three_uncovered_arr4+4));
     return v;
 }
 const std::vector<std::vector<int> > THREE_UNCOVERED = initThree();
@@ -68,6 +74,8 @@ std::map<std::vector<int>, int> initPatterns() {
     m[THREE_UNCOVERED[0]] = THREE_UNCOVERED_WEIGHT;
     m[THREE_UNCOVERED[1]] = THREE_UNCOVERED_WEIGHT;
     m[THREE_UNCOVERED[2]] = THREE_UNCOVERED_WEIGHT;
+    m[THREE_UNCOVERED[3]] = THREE_UNCOVERED_WEIGHT;
+    m[THREE_UNCOVERED[4]] = THREE_UNCOVERED_WEIGHT;
     m[TWO_UNCOVERED[0]] = TWO_UNCOVERED_WEIGHT;
     m[TWO_UNCOVERED[1]] = TWO_UNCOVERED_WEIGHT;
     m[TWO_UNCOVERED[2]] = TWO_UNCOVERED_WEIGHT;

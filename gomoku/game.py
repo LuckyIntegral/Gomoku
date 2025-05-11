@@ -20,7 +20,7 @@ TURNS_TO_DISPLAY = [
 
 OPPONENT = 3
 
-LOGGING_ENABLED = False
+LOGGING_ENABLED = True
 
 class Game:
     ''' Main game class '''
@@ -310,6 +310,9 @@ class Game:
         piece = 'X' if player_turn == 1 else 'O'
         log_line = f"Move {self.move_number}: Player {player_turn} ({piece}) -> ({row}, {col}) captures: {captures}, time: {duration} ms\n"
         self.log_file.write(log_line)
+        board = self.game.get_board()
+        board_state = "\n".join(" ".join("." if cell == 0 else ("x" if cell == 1 else "o") for cell in row) for row in board)
+        self.log_file.write("Board state:\n" + board_state + "\n")
         self.log_file.flush()
 
 

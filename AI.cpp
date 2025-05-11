@@ -197,21 +197,14 @@ void AI::clearTranspositionTable() {
 
 std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxDepth) {
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    std::pair<int, std::pair<int, int> > bestMove = std::make_pair(0, std::make_pair(-1, -1));
+    std::pair<int, std::pair<int, int>> bestMove = std::make_pair(0, std::make_pair(-1, -1));
     
     int moveCount = 0;
-    std::vector<std::vector<int> > board = game.get_board();
-    for (std::vector<std::vector<int> >::iterator rowIt = board.begin(); rowIt != board.end(); ++rowIt) {
-        for (std::vector<int>::iterator cellIt = rowIt->begin(); cellIt != rowIt->end(); ++cellIt) {
-            if (*cellIt != EMPTY)
+    std::vector<std::vector<int>> board = game.get_board();
+    for (size_t i = 0; i < board.size(); i++) {
+        for (size_t j = 0; j < board[i].size(); j++) {
+            if (board[i][j] != EMPTY)
                 moveCount++;
-        }
-    }
-    if (moveCount < 4) {
-        static const std::vector<std::pair<int,int> > opening_moves = { std::make_pair(9,9), std::make_pair(8,8), std::make_pair(10,10), std::make_pair(7,7) };
-        for (std::vector<std::pair<int,int> >::const_iterator it = opening_moves.begin(); it != opening_moves.end(); ++it) {
-            if (game.is_valid_move(player, it->first, it->second))
-                return std::make_pair(WIN_WEIGHT, *it);
         }
     }
     
@@ -228,7 +221,7 @@ std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxD
         depth += (depth < 5) ? 1 : 2;
     }
     if (bestMove.second.first == -1) {
-        std::vector<std::pair<int, int> > moves = game.get_best_possible_moves(player);
+        std::vector<std::pair<int, int>> moves = game.get_best_possible_moves(player);
         if (!moves.empty())
             bestMove.second = moves[0];
     }

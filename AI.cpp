@@ -9,7 +9,7 @@ static std::string intToString(int n) {
     return ss.str();
 }
 
-static inline uint64_t getFullKey(const Game& game, [[maybe_unused]] int player) {
+static inline uint64_t getFullKey(const Game& game) {
     return game.get_zobrist_key();
 }
 
@@ -67,14 +67,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
         return {eval, {-1, -1}};
     }
 
-    if(depth > 0) {
-        std::vector<std::pair<int,int>> immediateMoves;
-        if(!immediateMoves.empty()){
-            return { WIN_WEIGHT, immediateMoves[0] };
-        }
-    }
-    
-    uint64_t key = getFullKey(game, player);
+    uint64_t key = getFullKey(game);
     std::unordered_map<uint64_t, TranspositionEntry>::iterator ttIt = transpositionTable.find(key);
     if (ttIt != transpositionTable.end()) {
         TranspositionEntry& entry = ttIt->second;

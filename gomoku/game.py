@@ -20,7 +20,7 @@ TURNS_TO_DISPLAY = [
 
 OPPONENT = 3
 
-LOGGING_ENABLED = True
+LOGGING_ENABLED = False
 
 class Game:
     ''' Main game class '''

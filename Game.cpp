@@ -198,32 +198,46 @@ int Game::evaluate_board(int player) const {
     if (is_win(opp))    return -WIN_WEIGHT;
 
     int score = 0;
-    score += countPatternOnBoard(FOUR_UNCOVERED[0], player) * FOUR_UNCOVERED_WEIGHT;
-    score -= countPatternOnBoard(FOUR_UNCOVERED[0], opp) * FOUR_UNCOVERED_WEIGHT * 10;
-    
+
+    for (std::vector<std::vector<int> >::const_iterator it = FOUR_UNCOVERED.begin(); it != FOUR_UNCOVERED.end(); ++it) {
+        score += countPatternOnBoard(*it, player) * FOUR_UNCOVERED_WEIGHT;
+        score -= countPatternOnBoard(*it, opp) * FOUR_UNCOVERED_WEIGHT * 10;
+    }
+
+    for (std::vector<std::vector<int> >::const_iterator it = THREE_UNCOVERED.begin(); it != THREE_UNCOVERED.end(); ++it) {
+        score += countPatternOnBoard(*it, player) * THREE_UNCOVERED_WEIGHT;
+        score -= countPatternOnBoard(*it, opp) * THREE_UNCOVERED_WEIGHT * 5;
+    }
+
+    for (std::vector<std::vector<int> >::const_iterator it = TWO_UNCOVERED.begin(); it != TWO_UNCOVERED.end(); ++it) {
+        score += countPatternOnBoard(*it, player) * TWO_UNCOVERED_WEIGHT;
+        score -= countPatternOnBoard(*it, opp) * TWO_UNCOVERED_WEIGHT;
+    }
+
     score += get_captures(player) * CAPTURE_WEIGHT;
     score -= get_captures(opp) * CAPTURE_WEIGHT;
-    for (std::map<std::vector<int>, int>::const_iterator it = PATTERNS.begin(); it != PATTERNS.end(); ++it) {
-        score += countPatternOnBoard(it->first, player) * it->second;
-    }
-    score -= countPatternOnBoard(THREE_UNCOVERED[0], opp) * THREE_UNCOVERED_WEIGHT * 5;
 
     score += dynamic_evaluation(player) - dynamic_evaluation(opp);
-    score += frontier_evaluation(player) * FRONTIER_WEIGHT
-          - frontier_evaluation(opp) * FRONTIER_WEIGHT;
-    score += captureStreak[player] * CAPTURE_STREAK_WEIGHT
-           - captureStreak[opp] * CAPTURE_STREAK_WEIGHT;
-    
-    return score;
+    score += frontier_evaluation(player) * FRONTIER_WEIGHT - frontier_evaluation(opp) * FRONTIER_WEIGHT;
+
+    int center = BOARD_SIZE / 2;
+    int bonus = 0;
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c)
+            if (board[r][c] == player)
+                bonus += (BOARD_SIZE - (abs(r-center) + abs(c-center)));
+    }
+    return score + bonus;
 }
 
 int Game::dynamic_evaluation(int player) const {
     int bonus = 0;
     int center = BOARD_SIZE/2;
-    for (int r = 0; r < BOARD_SIZE; ++r)
+    for (int r = 0; r < BOARD_SIZE; ++r) {
         for (int c = 0; c < BOARD_SIZE; ++c)
             if (board[r][c]==player)
                 bonus += (BOARD_SIZE - (abs(r-center)+abs(c-center)));
+    }
     return bonus;
 }
 
@@ -255,15 +269,6 @@ std::vector<std::pair<int,int> > Game::get_immediate_threats(int player) {
                 threats.emplace_back(i, j);
         }
     }
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-        for (int j = 0; j < BOARD_SIZE; ++j) {
-            if (board[i][j] != EMPTY) continue;
-            board[i][j] = opp;
-            if (countPatternOnBoard(FOUR_UNCOVERED[0], opp) > 0)
-                threats.emplace_back(i, j);
-            board[i][j] = EMPTY;
-        }
-    }
     return threats;
 }
 
@@ -281,7 +286,6 @@ std::vector<std::pair<int, int> > Game::get_best_possible_moves(int player) {
     }
     find_potential_wins(player, moves);
     find_potential_wins(opponent(player), moves);
-    
     if (moves.empty()) {
         moves.insert({BOARD_SIZE / 2, BOARD_SIZE / 2});
     }
@@ -292,9 +296,7 @@ bool Game::is_valid_move(int player, int row, int col) {
     if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return false;
     if (board[row][col] != EMPTY) return false;
     if (isCapture(player, row, col)) return true;
-
     int prevCount = 0;
-
     std::vector<std::vector<int> >::const_iterator itPattern;
     for(itPattern = THREE_UNCOVERED.begin(); itPattern != THREE_UNCOVERED.end(); ++itPattern) {
         prevCount += countPatternOnBoard(*itPattern, player);
@@ -310,20 +312,16 @@ bool Game::is_valid_move(int player, int row, int col) {
 
 int Game::heuristic_evaluation(int player, int row, int col) {
     int history = moveHistory[row][col];
-    
     double decayFactor = 0.9;
     double dynamicHistory = history * pow(decayFactor, history);
-    
     std::vector<std::pair<int, int> > capturedStones;
     int captureCount = 0;
-
     int opponentPlayer = opponent(player);
-
+    
     int playerScoreBefore = evaluate_board(player) + get_captures(player) * CAPTURE_WEIGHT;
     int opponentScoreBefore = evaluate_board(opponentPlayer) + get_captures(opponentPlayer) * CAPTURE_WEIGHT;
-
+    
     make_move(player, row, col, captureCount, capturedStones);
-
     int playerScoreAfter = evaluate_board(player) + get_captures(player) * CAPTURE_WEIGHT;
     int opponentScoreAfter = evaluate_board(opponentPlayer) + get_captures(opponentPlayer) * CAPTURE_WEIGHT;
 
@@ -333,7 +331,6 @@ int Game::heuristic_evaluation(int player, int row, int col) {
     int opponentScoreDelta = opponentScoreBefore - opponentScoreAfter;
 
     int dynamicBonus = static_cast<int>(DYNAMIC_WEIGHT * dynamicHistory);
-    
     return playerScoreDelta + opponentScoreDelta + dynamicBonus;
 }
 
@@ -349,7 +346,6 @@ bool Game::isCapture(int player, int row, int col) const {
 std::pair<int, std::set<std::pair<int, int> > > Game::countAndRemoveCaptures(int player, int row, int col) {
     int count = 0;
     std::set<std::pair<int, int> > capturedStones;
-    
     const std::vector<std::pair<int, int> >& directions = Game::getDirections();
     for (std::vector<std::pair<int, int> >::const_iterator it = directions.begin(); it != directions.end(); ++it) {
         int dr = it->first, dc = it->second;
@@ -368,13 +364,12 @@ std::pair<int, std::set<std::pair<int, int> > > Game::countAndRemoveCaptures(int
 
 int Game::countPatternInDirection(const std::vector<int>& pattern, int row, int col, int dr, int dc) const {
     int m = pattern.size();
-
-    int endRow = row + (m - 1) * dr;
-    int endCol = col + (m - 1) * dc;
-    if(endRow < 0 || endRow >= BOARD_SIZE || endCol < 0 || endCol >= BOARD_SIZE)
+    if (row + (m - 1) * dr < 0 || row + (m - 1) * dr >= BOARD_SIZE)
+        return 0;
+    if (col + (m - 1) * dc < 0 || col + (m - 1) * dc >= BOARD_SIZE)
         return 0;
     for (int k = 0; k < m; ++k) {
-        if(board[row + k * dr][col + k * dc] != pattern[k])
+        if (board[row + k * dr][col + k * dc] != pattern[k])
             return 0;
     }
     return 1;
@@ -391,7 +386,6 @@ int Game::countPatternOnBoard(const std::vector<int>& pattern, int player) const
         }
     }
     int count = 0;
-
     std::vector<std::pair<int, int> > directions;
     directions.push_back(std::make_pair(0, 1));
     directions.push_back(std::make_pair(1, 0));

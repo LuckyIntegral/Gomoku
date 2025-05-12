@@ -14,7 +14,7 @@ static inline uint64_t getFullKey(const Game& game) {
 }
 
 AI::AI(Game& game, int player)
-    : game(game), player(player)
+    : game(game), player(player), lastDepthUsed_(0)
 {
     transpositionTable.clear();
     initializeZobrist();
@@ -196,6 +196,9 @@ void AI::clearTranspositionTable() {
 }
 
 std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxDepth) {
+    lastDepthUsed_ = 0;
+    clearTranspositionTable();
+
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::pair<int, std::pair<int, int>> bestMove = std::make_pair(0, std::make_pair(-1, -1));
     
@@ -214,7 +217,7 @@ std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxD
             std::chrono::high_resolution_clock::now() - start);
         if (elapsed.count() > TIME_LIMIT_MS)
             break;
-        clearTranspositionTable();
+        lastDepthUsed_ = depth;
         bestMove = minimax(player, depth, -WIN_WEIGHT*2, WIN_WEIGHT*2, true, start, TIME_LIMIT_MS);
         if (abs(bestMove.first) >= WIN_WEIGHT)
             break;
@@ -226,4 +229,8 @@ std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxD
             bestMove.second = moves[0];
     }
     return bestMove;
+}
+
+int AI::get_last_depth() const {
+    return lastDepthUsed_;
 }

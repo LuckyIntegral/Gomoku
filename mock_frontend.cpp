@@ -86,6 +86,7 @@ void printBoard(const Game& game) {
 }
 
 int main() {
+    bool showDepth = false;
 
     Game game;
     AI ai1(game, PLAYER1);
@@ -144,22 +145,47 @@ int main() {
             std::cout << "Move failed for player " << currentPlayer << " at (" << row << ", " << col << ")" << std::endl;
             break;
         }
-        
-        std::cout << "Move " << ++moveNumber << ": Player " << currentPlayer 
-             << " (" << (currentPlayer == PLAYER1 ? 'X' : 'O') << ")"
-             << " -> (" << row << ", " << col << ") captures: " << capturesCount << std::endl;
-        std::cout << "Time taken: " << duration << " ms" << std::endl;
+
+        int lastDepth = (currentPlayer == PLAYER1) ? ai1.get_last_depth() : ai2.get_last_depth();
+        if(showDepth) {
+            std::cout << "Move " << ++moveNumber << ": Player " << currentPlayer 
+                      << " (" << (currentPlayer == PLAYER1 ? 'X' : 'O') << ")"
+                      << " -> (" << row << ", " << col << ") captures: " << capturesCount
+                      << " planned depth: " << searchDepth << ", last depth: " << lastDepth
+                      << std::endl;
+        } else {
+            std::cout << "Move " << ++moveNumber << ": Player " << currentPlayer 
+                      << " (" << (currentPlayer == PLAYER1 ? 'X' : 'O') << ")"
+                      << " -> (" << row << ", " << col << ") captures: " << capturesCount
+                      << " depth: " << searchDepth 
+                      << std::endl;
+        }
         printBoard(game);
         
         currentPlayer = (currentPlayer == PLAYER1 ? PLAYER2 : PLAYER1);
     }
     
     if (game.is_win(PLAYER1)) {
-        std::cout << "Player 1 (X) wins!" << std::endl;
+        int p1caps = game.get_captures(PLAYER1);
+        if (p1caps >= 5)
+            std::cout << "Player 1 (X) wins by capturing!" << std::endl;
+        else
+            std::cout << "Player 1 (X) wins!" << std::endl;
     } else if (game.is_win(PLAYER2)) {
-        std::cout << "Player 2 (O) wins!" << std::endl;
+        int p2caps = game.get_captures(PLAYER2);
+        if (p2caps >= 5)
+            std::cout << "Player 2 (O) wins by capturing!" << std::endl;
+        else
+            std::cout << "Player 2 (O) wins!" << std::endl;
     } else {
         std::cout << "Game ended in a draw or max moves reached." << std::endl;
+    }
+
+    {
+        int total1 = game.get_captures(PLAYER1);
+        int total2 = game.get_captures(PLAYER2);
+        std::cout << "Total captures: Player1: " << total1
+                  << ", Player2: " << total2 << std::endl;
     }
     
     return 0;

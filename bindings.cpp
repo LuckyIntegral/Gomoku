@@ -20,5 +20,6 @@ PYBIND11_MODULE(game_module, m, py::mod_gil_not_used()) {
 
     py::class_<AI>(m, "AI")
         .def(py::init<Game&, int>())
-        .def("iterative_deepening", &AI::iterative_deepening);
+        .def("iterative_deepening", &AI::iterative_deepening)
+        .def("get_last_depth", &AI::get_last_depth);
 }

@@ -21,6 +21,7 @@ TURNS_TO_DISPLAY = [
 OPPONENT = 3
 
 LOGGING_ENABLED = False
+SHOW_DEPTH = False
 
 class Game:
     ''' Main game class '''
@@ -42,6 +43,8 @@ class Game:
 
         if LOGGING_ENABLED:
             self.log_file = open("game_log.txt", "a")
+            self.log_file.write(f"New game: {self.player1} vs {self.player2}\n")
+            self.log_file.write("Initial captures: Player1: 0, Player2: 0\n")
         else:
             self.log_file = None
         self.move_number = 0
@@ -304,15 +307,35 @@ class Game:
         self.hints = [[move[1], move[0]]]
 
 
-    def log_move(self, player_turn: int, row: int, col: int, captures: int, duration: int) -> None:
+    def log_move(self, player_turn: int, row: int, col: int, captures: int, duration: int, depth: int, last_depth: int = -1) -> None:
         if not LOGGING_ENABLED or self.log_file is None:
             return
         piece = 'X' if player_turn == 1 else 'O'
-        log_line = f"Move {self.move_number}: Player {player_turn} ({piece}) -> ({row}, {col}) captures: {captures}, time: {duration} ms\n"
+
+        if SHOW_DEPTH:
+            if last_depth != -1:
+                log_line = (
+                    f"Move {self.move_number}: Player {player_turn} ({piece}) "
+                    f"-> ({row}, {col}) captures: {captures}, time: {duration} ms, planned depth: {depth}, last depth: {last_depth}\n"
+                )
+            else:
+                log_line = (
+                    f"Move {self.move_number}: Player {player_turn} ({piece}) "
+                    f"-> ({row}, {col}) captures: {captures}, time: {duration} ms, depth: {depth}\n"
+                )
+        else:
+            log_line = (
+                f"Move {self.move_number}: Player {player_turn} ({piece}) "
+                f"-> ({row}, {col}) captures: {captures}, time: {duration} ms\n"
+            )
         self.log_file.write(log_line)
         board = self.game.get_board()
         board_state = "\n".join(" ".join("." if cell == 0 else ("x" if cell == 1 else "o") for cell in row) for row in board)
         self.log_file.write("Board state:\n" + board_state + "\n")
+
+        total1 = self.game.get_captures(1)
+        total2 = self.game.get_captures(2)
+        self.log_file.write(f"Total captures: Player1: {total1}, Player2: {total2}\n")
         self.log_file.flush()
 
 
@@ -342,7 +365,7 @@ class Game:
                             post_capture = self.game.get_captures(current_turn)
                             captured = post_capture - pre_capture
                             self.move_number += 1
-                            self.log_move(current_turn, move[0], move[1], captured, duration)
+                            self.log_move(current_turn, move[0], move[1], captured, duration, DEPTH)
                             self.aftermove(TURNS_TO_DISPLAY[2 - current_turn])
                             if self.game.is_win(current_turn):
                                 self.game_status = STATUS_WIN_PLAYER1 if current_turn == 1 else STATUS_WIN_PLAYER2
@@ -354,12 +377,12 @@ class Game:
                 current_turn = self.turn
                 pre_capture = self.game.get_captures(current_turn)
                 start_move = self.get_time()
-                success, move = api.ai_move(self.game, current_turn, DEPTH, self.capt[current_turn - 1])
+                success, move, last_depth = api.ai_move(self.game, current_turn, DEPTH, self.capt[current_turn - 1])
                 duration = self.get_time() - start_move
                 post_capture = self.game.get_captures(current_turn)
                 captured = post_capture - pre_capture
                 self.move_number += 1
-                self.log_move(current_turn, move[0], move[1], captured, duration)
+                self.log_move(current_turn, move[0], move[1], captured, duration, DEPTH, last_depth)
                 self.aftermove(TURNS_TO_DISPLAY[2 - current_turn])
                 if self.game.is_win(current_turn):
                     self.game_status = STATUS_WIN_PLAYER1 if current_turn == 1 else STATUS_WIN_PLAYER2
@@ -368,5 +391,8 @@ class Game:
 
         display.display_exit_status(self.screen, self.game_status)
         if self.log_file is not None:
+            total1 = self.game.get_captures(1)
+            total2 = self.game.get_captures(2)
+            self.log_file.write(f"Game over! Final captures - Player1: {total1}, Player2: {total2}\n")
             self.log_file.close()
         return 0

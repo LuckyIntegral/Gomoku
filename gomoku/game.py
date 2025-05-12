@@ -87,7 +87,7 @@ class Game:
     def sync_display(self, turn_to_display: str) -> None:
         ''' Sync the display with the board '''
         display.draw_board(self.screen)
-        display.draw_pieces(self.screen, self.game.get_board(), self.hints)
+        display.draw_pieces(self.screen, self.game.get_board(), self.hints, self.turn)
         if self.hints_mode:
             for hint in self.hints:
                 display.draw_piece(self.screen, hint[0], hint[1], display.HINT)
@@ -106,7 +106,7 @@ class Game:
         self.clock = self.get_time()
         if self.hints_mode:
             self.add_player_hints()
-            display.draw_pieces(self.screen, self.game.get_board(), self.hints)
+            display.draw_pieces(self.screen, self.game.get_board(), self.hints, self.turn)
             pygame.display.flip()
 
 

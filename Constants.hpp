@@ -18,7 +18,7 @@ const int THREE_COVERED_WEIGHT = 10;
 const int CAPTURE_WEIGHT = 500000;
 
 const int EXPANDED_RADIUS = 5;
-const int TIME_LIMIT_MS = 445;
+const int TIME_LIMIT_MS = 400;
 const int DANGEROUS_PENALTY = 5000000;
 
 const int OPPONENT_OFFSET = 3;

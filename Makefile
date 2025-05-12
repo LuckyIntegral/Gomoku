@@ -32,7 +32,7 @@ test:
 	@echo "Building optimized module (only cpp) with sanitizer"
 	@if [ -f Gomoku ]; then rm Gomoku; fi
 	@echo "Compiling C++ files with sanitizer flags..."
-	$(CXX) -O3 -pg -std=c++11 $(shell python3-config --cflags) -o Gomoku $(filter-out bindings.cpp, $(wildcard *.cpp)) $(shell python3-config --ldflags)
+	$(CXX) -O3 -g -std=c++11 $(shell python3-config --cflags) -o Gomoku $(filter-out bindings.cpp, $(wildcard *.cpp)) $(shell python3-config --ldflags) # use -pg for profiling
 #	$(CXX) -O3 -fsanitize=address,leak,undefined -std=c++20 $(shell python3-config --cflags) -o Gomoku $(filter-out bindings.cpp, $(wildcard *.cpp)) $(shell python3-config --ldflags)
 	ASAN_OPTIONS=detect_leaks=0 ./Gomoku
 

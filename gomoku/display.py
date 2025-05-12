@@ -1,5 +1,4 @@
 ''' all the display functions are here '''
-import time
 import pygame
 from . import game
 
@@ -9,10 +8,11 @@ BOARD      = (213, 169, 94)
 WHITE      = (255, 255, 255)
 BLACK      = (0, 0, 0)
 GRAY       = (200, 200, 200)
-HINT       = (128, 128, 128)
-# so far i hate the red color, it is really ugly on gray background, make it more beautiful
 RED        = (255, 100, 100)
 BLUE       = (30, 144, 255)
+
+LIGHT_GRAY = (210, 210, 210)
+DARK_GRAY  = (90, 90, 90)
 
 WINDOW_SIZE = (1300, 840)
 BOARD_SIZE  = 19
@@ -45,11 +45,15 @@ def draw_piece(screen: pygame.Surface, x: int, y: int, color: tuple[int, int, in
     pygame.draw.circle(screen, color, (40 + x * 42, 40 + y * 42), 20)
     pygame.draw.circle(screen, BLACK, (40 + x * 42, 40 + y * 42), 20, 1)
 
+def draw_hint(screen: pygame.Surface, x: int, y: int, color: tuple[int, int, int]) -> None:
+    ''' Draw a hint circle with a fixed color (no alternating shading) '''
+    pygame.draw.circle(screen, color, (40 + x * 42, 40 + y * 42), 20)
 
 def draw_pieces(
     screen: pygame.Surface,
     board: list[list[int]],
-    hints: list[tuple[int, int]] = None
+    hints: list[tuple[int, int]] = None,
+    next_player: int = None
 ) -> None:
     ''' Draw all pieces '''
     for y, row in enumerate(board):
@@ -60,8 +64,14 @@ def draw_pieces(
                 draw_piece(screen, x, y, BLACK)
 
     if hints:
+        if next_player == 1:
+            hint_color = LIGHT_GRAY
+        elif next_player == 2:
+            hint_color = DARK_GRAY
+        else:
+            hint_color = DARK_GRAY
         for x, y in hints:
-            draw_piece(screen, x, y, HINT)
+            draw_hint(screen, x, y, hint_color)
 
 
 def mouse_click(board: list[list[int]]) -> tuple[tuple[int, int], bool]:
@@ -199,4 +209,3 @@ def draw_menu(
     screen.blit(text, (830, 780))
     text = small_font.render("No double-threes allowed.", True, GRAY)
     screen.blit(text, (830, 800))
-    

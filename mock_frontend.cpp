@@ -152,12 +152,14 @@ int main() {
                       << " (" << (currentPlayer == PLAYER1 ? 'X' : 'O') << ")"
                       << " -> (" << row << ", " << col << ") captures: " << capturesCount
                       << " planned depth: " << searchDepth << ", last depth: " << lastDepth
+                      << ", time: " << duration << " ms"
                       << std::endl;
         } else {
             std::cout << "Move " << ++moveNumber << ": Player " << currentPlayer 
                       << " (" << (currentPlayer == PLAYER1 ? 'X' : 'O') << ")"
                       << " -> (" << row << ", " << col << ") captures: " << capturesCount
                       << " depth: " << searchDepth 
+                      << ", time: " << duration << " ms"
                       << std::endl;
         }
         printBoard(game);

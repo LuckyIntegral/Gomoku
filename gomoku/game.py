@@ -78,7 +78,9 @@ class Game:
 
     def refresh_status(self) -> None:
         ''' Refresh the game status '''
-        if self.game.is_win(1):
+        if self.game.is_win(1) and self.game.is_win(2):
+            self.game_status = STATUS_DRAW
+        elif self.game.is_win(1):
             self.game_status = STATUS_WIN_PLAYER1
         elif self.game.is_win(2):
             self.game_status = STATUS_WIN_PLAYER2
@@ -351,10 +353,13 @@ class Game:
 
         while self.game_status == STATUS_RUNNING:
             if self.move_number > 0 and self.move_number % 2 == 0:
-                if self.game.is_win(1):
+                if self.game.is_win(1) and self.game.is_win(2):
+                    self.game_status = STATUS_DRAW
+                    break
+                elif self.game.is_win(1):
                     self.game_status = STATUS_WIN_PLAYER1
                     break
-                if self.game.is_win(2):
+                elif self.game.is_win(2):
                     self.game_status = STATUS_WIN_PLAYER2
                     break
 

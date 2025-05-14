@@ -115,7 +115,6 @@ def request_window(screen: pygame.Surface, options: list[str]) -> int:
 
 def display_exit_status(screen: pygame.Surface, status: int) -> None:
     ''' Display the exit status '''
-
     font = pygame.font.Font(None, 36)
     text = None
     match status:
@@ -124,7 +123,7 @@ def display_exit_status(screen: pygame.Surface, status: int) -> None:
         case game.STATUS_WIN_PLAYER2:
             text = font.render("  Black won!", True, WHITE)
         case game.STATUS_DRAW:
-            text = font.render("  Game over!", True, WHITE)
+            text = font.render("  Draw!", True, WHITE)
         case _:
             text = font.render("Error!", True, WHITE)
 

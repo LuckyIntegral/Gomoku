@@ -403,6 +403,12 @@ class Game:
 
         display.display_exit_status(self.screen, self.game_status)
         if self.log_file is not None:
+            if self.game_status == STATUS_DRAW:
+                self.log_file.write("Game result: Draw\n")
+            elif self.game_status == STATUS_WIN_PLAYER1:
+                self.log_file.write("Game result: Player 1 wins\n")
+            elif self.game_status == STATUS_WIN_PLAYER2:
+                self.log_file.write("Game result: Player 2 wins\n")
             total1 = self.game.get_captures(1)
             total2 = self.game.get_captures(2)
             self.log_file.write(f"Game over! Final captures - Player1: {total1}, Player2: {total2}\n")

@@ -227,7 +227,36 @@ int Game::evaluate_board(int player) const {
             if (board[r][c] == player)
                 bonus += (BOARD_SIZE - (abs(r-center) + abs(c-center)));
     }
+    bonus += potential_capture_bonus(player) - potential_capture_bonus(opp);
+    
     return score + bonus;
+}
+
+int Game::potential_capture_bonus(int player) const {
+    static const int POTENTIAL_CAPTURE_WEIGHT = 10;
+    int bonus = 0;
+    int opp = opponent(player);
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            if (board[r][c] != EMPTY)
+                continue;
+            int captures = 0;
+            const std::vector<std::pair<int,int> >& dirs = getDirections();
+            for (std::vector<std::pair<int,int> >::const_iterator it = dirs.begin(); it != dirs.end(); ++it) {
+                int nr1 = r + it->first, nc1 = c + it->second;
+                int nr2 = r + 2 * it->first, nc2 = c + 2 * it->second;
+                int nr3 = r + 3 * it->first, nc3 = c + 3 * it->second;
+                if (nr1 < 0 || nr1 >= BOARD_SIZE || nc1 < 0 || nc1 >= BOARD_SIZE ||
+                    nr2 < 0 || nr2 >= BOARD_SIZE || nc2 < 0 || nc2 >= BOARD_SIZE ||
+                    nr3 < 0 || nr3 >= BOARD_SIZE || nc3 < 0 || nc3 >= BOARD_SIZE)
+                    continue;
+                if (board[nr1][nc1] == opp && board[nr2][nc2] == opp && board[nr3][nc3] == EMPTY)
+                    ++captures;
+            }
+            bonus += captures;
+        }
+    }
+    return bonus * POTENTIAL_CAPTURE_WEIGHT;
 }
 
 int Game::dynamic_evaluation(int player) const {

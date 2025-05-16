@@ -56,4 +56,5 @@ class Game {
         std::vector<std::pair<int,int>> get_immediate_threats(int player);
         bool would_create_win(int player, int row, int col) const;
         bool matchesThreeInDirection(int player, int row, int col, int dr, int dc) const;
+        int potential_capture_bonus(int player) const;
 };

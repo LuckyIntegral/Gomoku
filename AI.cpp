@@ -85,10 +85,10 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
         transpositionTable[key] = entry;
         return {eval, std::make_pair(-1, -1)};
     }
-    
+
     std::pair<int, int> bestMove = std::make_pair(-1, -1);
     std::vector<std::pair<int, int> > moves = game.get_best_possible_moves(player);
-    
+
     std::vector<std::pair<int, std::pair<int, int> > > scoredMoves;
     for (std::vector<std::pair<int, int> >::iterator it = moves.begin(); it != moves.end(); ++it) {
         int score = game.heuristic_evaluation(player, it->first, it->second);
@@ -106,7 +106,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
     moves.clear();
     for (std::vector<std::pair<int, std::pair<int, int> > >::iterator it = scoredMoves.begin(); it != scoredMoves.end(); ++it)
         moves.push_back(it->second);
-    
+
     {
         std::vector<std::pair<int, int>> winMoves;
         for (std::vector<std::pair<int, int>>::iterator it = moves.begin(); it != moves.end(); ++it) {
@@ -128,8 +128,11 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
         for (size_t i = 0; i < moves.size(); i++) {
             int capturesCount = 0;
             std::vector<std::pair<int, int>> capturedStones;
+            if (!game.is_valid_move(player, moves[i].first, moves[i].second)) {
+                continue;
+            }
             game.make_move(player, moves[i].first, moves[i].second, capturesCount, capturedStones);
-            
+
             if (game.is_win(opponent(player))) {
                 game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
                 continue;
@@ -137,7 +140,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
             std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, false, start, timeLimit);
             int score = result.first;
             game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
-            
+
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = moves[i];
@@ -149,8 +152,11 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
         for (size_t i = 0; i < moves.size(); i++) {
             int capturesCount = 0;
             std::vector<std::pair<int, int>> capturedStones;
+            if (!game.is_valid_move(player, moves[i].first, moves[i].second)) {
+                continue;
+            }
             game.make_move(player, moves[i].first, moves[i].second, capturesCount, capturedStones);
-            
+
             if (game.is_win(opponent(player))) {
                 game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
                 continue;
@@ -158,7 +164,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
             std::pair<int, std::pair<int, int> > result = minimax(opponent(player), depth - 1, alpha, beta, true, start, timeLimit);
             int score = result.first;
             game.undo_move(player, moves[i].first, moves[i].second, capturedStones);
-            
+
             if (score < bestScore) {
                 bestScore = score;
                 bestMove = moves[i];
@@ -167,7 +173,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
             if (beta <= alpha) break;
         }
     }
-    
+
     TranspositionEntry entry;
     entry.depth = depth;
     entry.score = bestScore;
@@ -180,7 +186,7 @@ std::pair<int, std::pair<int, int> > AI::minimax(int player, int depth, int alph
         entry.type = EntryType::EXACT;
     }
     transpositionTable[key] = entry;
-    
+
     std::pair<int, std::pair<int, int> > result = {bestScore, bestMove};
     int score = result.first;
     bool dangerous = false;
@@ -201,7 +207,7 @@ std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxD
 
     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
     std::pair<int, std::pair<int, int>> bestMove = std::make_pair(0, std::make_pair(-1, -1));
-    
+
     int moveCount = 0;
     std::vector<std::vector<int>> board = game.get_board();
     for (size_t i = 0; i < board.size(); i++) {
@@ -210,7 +216,7 @@ std::pair<int, std::pair<int, int>> AI::iterative_deepening(int player, int maxD
                 moveCount++;
         }
     }
-    
+
     int depth = 1;
     while (depth <= maxDepth) {
         std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(

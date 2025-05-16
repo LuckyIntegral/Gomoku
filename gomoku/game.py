@@ -365,7 +365,7 @@ class Game:
 
             event_processed = False
             for event in pygame.event.get():
-                if event.type == pygame.QUIT: 
+                if event.type == pygame.QUIT:
                     exit(0)
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
                     # Process player moves:
